@@ -56,3 +56,17 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["sayso"]
+# Thin ctypes/Win32 wrappers can only run on a real Windows desktop; they are covered by the manual checklist
+# in docs/IMPLEMENTATION_PLAN.md section 9 and the Windows CI job smoke test.
+omit = [
+    "*/sayso/winsys/win32.py",
+    "*/sayso/winsys/hotkeys.py",
+    "*/sayso/winsys/context.py",
+    "*/sayso/winsys/clipboard.py",
+    "*/sayso/winsys/single_instance.py",
+    "*/sayso/runtime_probes.py",
+    "*/sayso/app.py",
+]
