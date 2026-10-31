@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sayso"
+version = "0.1.0"
+description = "Portable voice-first dictation with AI rewriting for Windows. Speak anywhere, insert polished text anywhere."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Sayso" }]
+dependencies = [
+    "PySide6-Essentials>=6.7",
+    "httpx>=0.27",
+    "numpy>=1.26",
+    "sounddevice>=0.4.7",
+]
+
+[project.optional-dependencies]
+# Local speech recognition (recommended). Pulls CTranslate2; adds ~120 MB to the build.
+local-stt = ["faster-whisper>=1.0.3"]
+# Claude as the rewriting brain.
+anthropic = ["anthropic>=0.69"]
+# UI Automation context and accessibility insertion.
+uia = ["comtypes>=1.4"]
+full = ["sayso[local-stt,anthropic,uia]"]
+dev = ["pytest>=8", "pytest-qt>=4.4", "respx>=0.21", "ruff>=0.6", "pyinstaller>=6.10"]
+
+[project.scripts]
+sayso = "sayso.__main__:main"
+
+[project.gui-scripts]
+sayso-gui = "sayso.__main__:main"
+
+# Third-party STT engines register here; see docs/ARCHITECTURE.md "Plugins".
+[project.entry-points."sayso.stt"]
+[project.entry-points."sayso.llm"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sayso = ["assets/*", "winsys/*.ps1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
