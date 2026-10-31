@@ -139,7 +139,7 @@ def test_push_to_talk_end_to_end(qtbot, make):
     assert c._recording and c.overlay.state is OverlayState.RECORDING and audio.started == 1
     with qtbot.waitSignal(c.dictated, timeout=5000) as sig:
         hk.stopped.emit()
-    assert not c._recording and audio.closed >= 1
+    assert not c._recording and audio.closed == 0 and c._mic_idle.isActive()
     assert inj.inserted == [("Polished text.", False)]
     assert sig.args[0].text == "Polished text."
     qtbot.waitUntil(lambda: c.overlay.state is OverlayState.SUCCESS and not c.busy, timeout=3000)
@@ -337,3 +337,26 @@ def test_turning_off_always_listening_keeps_a_push_to_talk_recording(qtbot, make
     with qtbot.waitSignal(c.dictated, timeout=5000):
         hk.stopped.emit()
     assert inj.inserted
+
+
+def test_mic_stays_open_after_dictation_then_closes_when_idle(qtbot, make):
+    c, hk, audio, *_ = make()
+    hk.started.emit("ptt", False)
+    with qtbot.waitSignal(c.dictated, timeout=5000):
+        hk.stopped.emit()
+    assert audio.closed == 0 and c._mic_idle.isActive()
+    c._close_idle_mic()
+    assert audio.closed == 1
+
+
+def test_starting_again_cancels_the_idle_close(qtbot, make):
+    c, hk, audio, *_ = make()
+    hk.started.emit("ptt", False)
+    with qtbot.waitSignal(c.dictated, timeout=5000):
+        hk.stopped.emit()
+    hk.started.emit("ptt", False)
+    assert not c._mic_idle.isActive() and c._recording
+    c._close_idle_mic()
+    assert audio.closed == 0
+    with qtbot.waitSignal(c.dictated, timeout=5000):
+        hk.stopped.emit()

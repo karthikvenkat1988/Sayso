@@ -40,6 +40,9 @@ log = logging.getLogger(__name__)
 
 SETTINGS_DEBOUNCE_MS = 300
 CONTEXT_WAIT_S = 0.3
+# Keep the microphone open this long after a dictation. Opening it on key-down needs ~100 ms to warm up, so
+# closing it straight away would clip the first syllable of the next dictation.
+MIC_IDLE_CLOSE_MS = 30_000
 
 FIX_HINTS = {
     "microphone": "Turn on Settings > Privacy > Microphone > Let desktop apps access your microphone.",
@@ -136,6 +139,8 @@ class Controller(QObject):
         self._watcher = QFileSystemWatcher(self)
         self._debounce = QTimer(self, singleShot=True, interval=SETTINGS_DEBOUNCE_MS)
         self._debounce.timeout.connect(self.reload_settings)
+        self._mic_idle = QTimer(self, singleShot=True, interval=MIC_IDLE_CLOSE_MS)
+        self._mic_idle.timeout.connect(self._close_idle_mic)
         self._sounds: dict[str, object] = {}
 
         self._outcome.connect(self._on_outcome)
@@ -342,6 +347,7 @@ class Controller(QObject):
         except MicrophoneUnavailable as exc:
             self._fail(str(exc))
             return
+        self._mic_idle.stop()
         self._recording, self._kind, self._command = True, kind, command
         state = (
             OverlayState.COMMAND
@@ -363,7 +369,7 @@ class Controller(QObject):
         self._recording = False
         clip = self.audio.stop()
         if not self._always_on:
-            self.audio.close()
+            self._mic_idle.start()
         self._play("stop")
         if self.tray:
             self.tray.set_state(paused=self._paused, offline=self.settings.privacy.offline_only)
@@ -388,6 +394,10 @@ class Controller(QObject):
         self._inflight.clear()
         if self.tray:
             self.tray.set_state(paused=self._paused, offline=self.settings.privacy.offline_only)
+
+    def _close_idle_mic(self) -> None:
+        if not self._recording and not self._always_on:
+            self.audio.close()
 
     def _safe_capture(self, hwnd: int) -> FocusContext:
         try:
