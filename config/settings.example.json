@@ -69,7 +69,7 @@
       "anthropic": {
         "kind": "anthropic",
         "base_url": "",
-        "model": "claude-opus-5-5",
+        "model": "claude-haiku-5-5",
         "api_key_ref": "llm.anthropic",
         "api_version": "",
         "deployment": "",

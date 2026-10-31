@@ -64,7 +64,7 @@ Provider settings live in `settings.json` (`%APPDATA%\Sayso\settings.json`, or `
   "llm": {
     "chain": ["anthropic", "ollama", "offline"],
     "providers": {
-      "anthropic":  { "kind": "anthropic", "model": "claude-opus-5-5", "effort": "low", "api_key_ref": "llm.anthropic" },
+      "anthropic":  { "kind": "anthropic", "model": "claude-haiku-5-5", "effort": "low", "api_key_ref": "llm.anthropic" },
       "openai":     { "kind": "openai", "base_url": "https://api.openai.com/v1", "model": "gpt-4o-mini", "api_key_ref": "llm.openai" },
       "azure":      { "kind": "azure", "base_url": "https://YOUR-RESOURCE.openai.azure.com", "deployment": "gpt-4o-mini",
                       "api_version": "2024-06-01", "api_key_ref": "llm.azure" },

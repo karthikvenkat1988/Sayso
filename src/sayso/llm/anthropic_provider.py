@@ -44,7 +44,7 @@ class AnthropicProvider(LLMProvider):
     ) -> RewriteResult:
         a = self._anthropic
         params = {
-            "model": self.cfg.model or "claude-opus-5-5",
+            "model": self.cfg.model or "claude-haiku-5-5",
             "max_tokens": 4096,
             "system": [{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
             "messages": [

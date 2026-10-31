@@ -525,7 +525,7 @@ Pages:
    progress; disabled in offline mode), whisper.cpp paths, Windows Speech culture, cloud STT key field.
 5. **AI**: provider chain (reorderable list with enable checkboxes), per-provider form (kind-specific fields,
    API key field writes to `CredentialStore`, never to settings.json), "Test" button runs a 1-sentence rewrite
-   and shows latency, timeout spin box. Default model for Claude is `claude-opus-5-5`.
+   and shows latency, timeout spin box. Default model for Claude is `claude-haiku-5-5`.
 6. **Apps**: profiles table (processes, mode, tone) with add/remove; "Use current app" picks the last
    foreground process; injection method per app.
 7. **Words**: vocabulary table and snippets table.

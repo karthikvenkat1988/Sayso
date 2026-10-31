@@ -131,3 +131,12 @@ def test_errors_map_to_unavailable(fake_sdk):
         _Client.last.raises = exc
         with pytest.raises(ProviderUnavailable):
             p.rewrite("hi", Mode.CHAT, PromptContext(), share_context=False, timeout=3)
+
+
+def test_default_model_is_haiku_when_none_configured(fake_sdk):
+    from sayso.llm.anthropic_provider import AnthropicProvider as AnthropicProviderFor
+
+    p = AnthropicProviderFor("anthropic", ProviderSettings(kind="anthropic", effort="low"), "key")
+    p.rewrite("hi", Mode.CHAT, PromptContext(), share_context=False, timeout=3)
+    assert _Client.last.params["model"] == "claude-haiku-5-5"
+    p.close()
