@@ -74,6 +74,7 @@ class JobOutcome:
     error: str = ""
     cancelled: bool = False
     app: str = ""
+    token: threading.Event | None = None  # identifies the job in Controller._inflight
 
 
 class Controller(QObject):
@@ -325,7 +326,13 @@ class Controller(QObject):
         return bool(self._inflight)
 
     def start_dictation(self, kind: str = "toggle", command: bool = False) -> None:
-        if self._paused or self._recording or self.busy:
+        if self._recording:
+            return
+        if self._paused or self.busy:
+            # The hotkey machine already counts this as started; without a reset the next toggle press
+            # would be read as "stop" and the user would have to press twice.
+            if self._hotkeys:
+                self._hotkeys.force_idle()
             return
         self._pause_vad(True)
         self._target_hwnd = self._foreground() if self._foreground else 0
@@ -411,7 +418,7 @@ class Controller(QObject):
         mode_override: Mode | None,
         cancel: threading.Event,
     ) -> None:
-        out = JobOutcome()
+        out = JobOutcome(token=cancel)
         try:
             ctx = FocusContext(hwnd=hwnd)
             if ctx_future is not None:
@@ -488,17 +495,20 @@ class Controller(QObject):
             self.settings_window.set_level(level)
 
     def _on_outcome(self, out: JobOutcome) -> None:
-        if self._inflight:
-            self._inflight.pop(0)
+        # Remove this job's own token: after a cancel the list may already hold a newer job's token.
+        if out.token is not None and out.token in self._inflight:
+            self._inflight.remove(out.token)
         if not self._inflight and self._hotkeys:
             self._hotkeys.set_processing(False)
         if out.cancelled:
             if not self._inflight and not self._recording:
                 self.overlay.set_state(OverlayState.HIDDEN)
             return
-        if not self.settings.general.show_overlay and not out.error:
-            return
         r = out.result
+        if not self.settings.general.show_overlay and not out.error:
+            if r is not None and r.text:
+                self._announce(r)
+            return
         if out.error:
             self._play("error")
             self.overlay.set_state(OverlayState.ERROR, out.error)
@@ -529,9 +539,7 @@ class Controller(QObject):
                 self.overlay.set_state(OverlayState.SUCCESS, msg)
             else:
                 self.overlay.set_state(OverlayState.SUCCESS, f"Inserted · {total / 1000:.1f} s")
-            self.dictated.emit(r)
-            if self.history_window is not None and self.history_window.isVisible():
-                self.history_window.refresh()
+            self._announce(r)
         if (
             self._always_on
             and not self._inflight
@@ -539,6 +547,11 @@ class Controller(QObject):
             and (out.result is None or not out.result.text)
         ):
             QTimer.singleShot(1200, self._restore_listening_pill)
+
+    def _announce(self, r: DictationResult) -> None:
+        self.dictated.emit(r)
+        if self.history_window is not None and self.history_window.isVisible():
+            self.history_window.refresh()
 
     def _restore_listening_pill(self) -> None:
         if self._always_on and not self.busy and not self._recording:
@@ -563,26 +576,32 @@ class Controller(QObject):
         a = self.settings.audio
         if on:
             self._vad = EnergyVad(a.sample_rate, 30, a.vad_threshold_db, end_ms=a.end_of_speech_ms)
-            self.audio.on_frame = self._on_frame
-            try:
-                self.audio.open()
-            except MicrophoneUnavailable as exc:
-                self._always_on = False
-                self.audio.on_frame = None
-                self._fail(str(exc))
+            if not self._attach_listening():
                 return
-            self.audio.start()
             self.overlay.set_state(OverlayState.ALWAYS_LISTENING)
         else:
             self.audio.on_frame = None
-            self.audio.cancel()
-            if not self._recording:
+            if not self._recording:  # a push-to-talk recording in progress keeps its audio
+                self.audio.cancel()
                 self.audio.close()
-            self.overlay.set_state(OverlayState.HIDDEN)
+                self.overlay.set_state(OverlayState.HIDDEN)
         if self.tray:
             self.tray.always_action.blockSignals(True)
             self.tray.always_action.setChecked(on)
             self.tray.always_action.blockSignals(False)
+
+    def _attach_listening(self) -> bool:
+        """Feeds the microphone into the VAD. False (and always-listening off) if the microphone fails."""
+        self.audio.on_frame = self._on_frame
+        try:
+            self.audio.open()
+        except MicrophoneUnavailable as exc:
+            self._always_on = False
+            self.audio.on_frame = None
+            self._fail(str(exc))
+            return False
+        self.audio.start()
+        return True
 
     def _pause_vad(self, paused: bool) -> None:
         if self._vad is not None:
@@ -629,11 +648,19 @@ class Controller(QObject):
     def _apply_loaded(self) -> None:
         old_stt, old_llm = self.stt, self.llm
         self._build_services()
-        old_stt.close()
-        old_llm.close()
-        if self._audio_override is None:
+        # A dictation may still be using the old engines; the worker is serial, so closing them there waits
+        # for it instead of killing a model or helper process mid-transcription.
+        self._worker.submit(old_stt.close)
+        self._worker.submit(old_llm.close)
+        if self._audio_override is None and not self._recording:
             self.audio.close()
             self.audio = self._new_audio()
+            if self._always_on:
+                # The new capture object has no stream and no VAD feed; without this, always-listening
+                # would silently stop after any settings change while the pill still says "Listening".
+                a = self.settings.audio
+                self._vad = EnergyVad(a.sample_rate, 30, a.vad_threshold_db, end_ms=a.end_of_speech_ms)
+                self._attach_listening()
         if self._hotkeys:
             self._hotkeys.reconfigure(self.settings.hotkeys, self.settings.activation)
         threading.Thread(target=self._warm_up, name="sayso-warmup", daemon=True).start()
@@ -727,13 +754,11 @@ class Controller(QObject):
         )
 
     def _set_autostart(self, on: bool) -> None:
-        import sys
-
         from sayso.winsys import autostart
 
         try:
             if on:
-                autostart.enable(sys.executable)
+                autostart.enable()
             else:
                 autostart.disable()
         except Exception:

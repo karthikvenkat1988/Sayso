@@ -16,9 +16,18 @@ log = logging.getLogger(__name__)
 class FasterWhisperEngine(STTEngine):
     name = "faster_whisper"
 
-    def __init__(self, cfg: FasterWhisperSettings, models_dir: Path, *, allow_download: bool = True):
+    def __init__(
+        self,
+        cfg: FasterWhisperSettings,
+        models_dir: Path,
+        *,
+        allow_download: bool = True,
+        bundled_dir: Path | None = None,
+    ):
         self.cfg = cfg
         self.models_dir = models_dir
+        # The offline zips ship models in .\models next to the exe, not in the per-user data folder.
+        self.bundled_dir = bundled_dir
         self.allow_download = allow_download
         self._model = None
         self._lock = threading.Lock()
@@ -49,11 +58,11 @@ class FasterWhisperEngine(STTEngine):
 
     def _resolve_model(self) -> str:
         p = Path(self.cfg.model)
-        bundled = self.models_dir / f"faster-whisper-{self.cfg.model}"
         if p.is_dir():
             return str(p)
-        if bundled.is_dir():
-            return str(bundled)
+        for root in (self.models_dir, self.bundled_dir):
+            if root is not None and (bundled := root / f"faster-whisper-{self.cfg.model}").is_dir():
+                return str(bundled)
         return self.cfg.model
 
     def transcribe(self, clip: AudioClip, *, language: str | None, prompt: str | None) -> Transcript:

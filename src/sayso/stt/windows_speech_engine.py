@@ -7,6 +7,7 @@ import contextlib
 import json
 import logging
 import os
+import queue
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,8 @@ from sayso.stt.base import AudioClip, EngineUnavailable, STTEngine, Transcript
 
 log = logging.getLogger(__name__)
 CREATE_NO_WINDOW = 0x08000000
+START_TIMEOUT_S = 20.0  # first Add-Type of System.Speech can be slow on a cold, AV-scanned machine
+REPLY_TIMEOUT_S = 60.0
 
 
 def _helper_script() -> Path:
@@ -46,6 +49,7 @@ class WindowsSpeechEngine(STTEngine):
     def __init__(self, cfg: WindowsSpeechSettings):
         self.cfg = cfg
         self._proc: subprocess.Popen[str] | None = None
+        self._lines: queue.Queue[str | None] = queue.Queue()
         self._lock = threading.Lock()
 
     def load(self) -> None:
@@ -74,11 +78,16 @@ class WindowsSpeechEngine(STTEngine):
                     stderr=subprocess.DEVNULL,
                     text=True,
                     encoding="utf-8",
+                    errors="replace",
                     creationflags=CREATE_NO_WINDOW,
                     bufsize=1,
                 )
                 assert self._proc.stdout is not None
-                hello = json.loads(self._proc.stdout.readline() or "{}")
+                self._lines = queue.Queue()
+                threading.Thread(
+                    target=_pump, args=(self._proc.stdout, self._lines), name="sayso-ws-out", daemon=True
+                ).start()
+                hello = json.loads(self._read(START_TIMEOUT_S) or "{}")
             except (OSError, json.JSONDecodeError) as exc:
                 self._proc = None
                 raise EngineUnavailable(f"Windows Speech helper could not start: {exc}") from exc
@@ -98,7 +107,7 @@ class WindowsSpeechEngine(STTEngine):
             with self._lock:
                 self._proc.stdin.write(wav + "\n")
                 self._proc.stdin.flush()
-                reply = json.loads(self._proc.stdout.readline() or "{}")
+                reply = json.loads(self._read(REPLY_TIMEOUT_S) or "{}")
         finally:
             Path(wav).unlink(missing_ok=True)
         if "error" in reply:
@@ -107,8 +116,27 @@ class WindowsSpeechEngine(STTEngine):
             reply.get("text", "").strip(), self.name, float(reply.get("confidence") or 0) or None
         )
 
+    def _read(self, timeout: float) -> str:
+        """One line from the helper. A hung helper must not hang the dictation worker (and with it every
+        dictation after it), so give up after ``timeout`` and kill it; the next call starts a fresh one."""
+        try:
+            line = self._lines.get(timeout=timeout)
+        except queue.Empty:
+            self.close()
+            raise EngineUnavailable("Windows Speech helper stopped responding") from None
+        if line is None:
+            self.close()
+            raise EngineUnavailable("Windows Speech helper exited")
+        return line
+
     def close(self) -> None:
         if self._proc:
             with contextlib.suppress(OSError):
                 self._proc.kill()
             self._proc = None
+
+
+def _pump(stream, lines: queue.Queue[str | None]) -> None:
+    for line in iter(stream.readline, ""):
+        lines.put(line)
+    lines.put(None)

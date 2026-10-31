@@ -73,7 +73,8 @@ def test_create_engine_cloud_blocked_offline(tmp_path):
 
 def test_from_settings_builds_in_order(tmp_path):
     c = SttChain.from_settings(
-        SttSettings(engines=["whisper_cpp", "windows_speech"]),
+        # Neither can run here on any OS (Windows Speech really works on Windows runners).
+        SttSettings(engines=["whisper_cpp", "cloud"]),
         models_dir=tmp_path,
         app_dir=tmp_path,
         secrets=lambda r: None,
@@ -81,4 +82,4 @@ def test_from_settings_builds_in_order(tmp_path):
     )
     with pytest.raises(NoEngineAvailable) as ei:
         c.transcribe(make_clip(), language=None, prompt=None)
-    assert [n for n, _ in ei.value.attempts] == ["whisper_cpp", "windows_speech"]
+    assert [n for n, _ in ei.value.attempts] == ["whisper_cpp", "cloud"]

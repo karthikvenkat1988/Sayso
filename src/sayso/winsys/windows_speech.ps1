@@ -2,6 +2,13 @@
 # Protocol: one WAV path per stdin line; one JSON object per stdout line.
 param([string]$Culture = "en-US")
 $ErrorActionPreference = "Stop"
+# Python talks UTF-8 both ways. The console default is the OEM code page, which garbles non-ASCII WAV paths
+# (a user name like "José" in %TEMP%) and recognised text in other languages.
+try {
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [Console]::InputEncoding = $utf8
+    [Console]::OutputEncoding = $utf8
+} catch { }
 Add-Type -AssemblyName System.Speech
 $info = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers() |
     Where-Object { $_.Culture.Name -eq $Culture } | Select-Object -First 1

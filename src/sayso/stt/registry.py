@@ -25,7 +25,9 @@ def create_engine(
     if name == "faster_whisper":
         from sayso.stt.faster_whisper_engine import FasterWhisperEngine
 
-        return FasterWhisperEngine(cfg.faster_whisper, models_dir, allow_download=not offline_only)
+        return FasterWhisperEngine(
+            cfg.faster_whisper, models_dir, allow_download=not offline_only, bundled_dir=app_dir / "models"
+        )
     if name == "whisper_cpp":
         from sayso.stt.whisper_cpp_engine import WhisperCppEngine
 

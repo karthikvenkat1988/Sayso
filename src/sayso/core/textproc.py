@@ -110,10 +110,13 @@ def strip_model_wrapping(text: str) -> str:
     """Removes quotes or a 'Here is ...:' preamble that small local models sometimes add."""
     t = text.strip()
     t = re.sub(r"^(?:here(?:'s| is) (?:the|your)[^:\n]{0,60}:\s*\n?)", "", t, flags=re.IGNORECASE)
-    if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'“”":
-        t = t[1:-1].strip()
-    if t.startswith("“") and t.endswith("”"):
-        t = t[1:-1].strip()
+    # Only unwrap when the quotes enclose the whole text: '"Hi" she said "ok"' must stay as it is.
+    if len(t) >= 2:
+        inner = t[1:-1]
+        straight = t[0] == t[-1] and t[0] in "\"'" and t[0] not in inner
+        curly = t[0] == "“" and t[-1] == "”" and "“" not in inner and "”" not in inner
+        if straight or curly:
+            t = inner.strip()
     return t
 
 
