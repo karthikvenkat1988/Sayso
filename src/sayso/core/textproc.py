@@ -33,7 +33,11 @@ def remove_fillers(text: str) -> str:
 
 def apply_scratch_that(text: str) -> str:
     """'Send it Monday scratch that Tuesday' -> 'Tuesday': drops the clause before the correction phrase."""
-    return _SCRATCH.sub("", text).strip()
+    def drop(m: re.Match[str]) -> str:
+        lead = m.group(0)[: len(m.group(0)) - len(m.group(0).lstrip())]
+        return lead if m.start() > 0 else ""
+
+    return _SCRATCH.sub(drop, text).strip()
 
 
 def apply_spoken_punctuation(text: str) -> str:

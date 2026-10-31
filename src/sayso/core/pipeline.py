@@ -12,6 +12,7 @@ from sayso.core import textproc
 from sayso.core.config import Settings
 from sayso.core.context import FocusContext, resolve
 from sayso.core.modes import Mode
+from sayso.llm.offline import OfflineRewriter
 from sayso.llm.prompts import PromptContext
 from sayso.llm.registry import ProviderChain
 from sayso.stt.base import AudioClip
@@ -19,6 +20,7 @@ from sayso.stt.registry import SttChain
 
 log = logging.getLogger(__name__)
 
+SHORT_UTTERANCE_WORDS = 4
 MIN_SECONDS = 0.25
 SILENCE_RMS = 0.004
 
@@ -93,6 +95,11 @@ class Pipeline:
 
         if resolved.mode is Mode.RAW_TRANSCRIPT:
             base.text, base.llm_provider = textproc.apply_spoken_punctuation(raw), "none"
+            return self._done(base, on_stage)
+
+        if resolved.mode is Mode.REWRITE_TEXT and textproc.word_count(raw) <= SHORT_UTTERANCE_WORDS:
+            # Too short to be worth a round trip; the offline rules are as good and instant.
+            base.text, base.llm_provider = OfflineRewriter.apply(raw, resolved.mode), "offline"
             return self._done(base, on_stage)
 
         if on_stage:

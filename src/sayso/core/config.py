@@ -243,8 +243,10 @@ def _convert(tp: Any, value: Any) -> Any:
         return {k: _convert(args[1], v) for k, v in value.items()} if args else dict(value)
     if tp is Mode:
         return Mode(value)
-    if tp is float and isinstance(value, int):
+    if tp is float and isinstance(value, int) and not isinstance(value, bool):
         return float(value)
+    if tp in (int, float, str, bool) and (not isinstance(value, tp) or (tp is not bool and isinstance(value, bool))):
+        raise TypeError(f"expected {tp.__name__}, got {type(value).__name__}")
     return value
 
 
