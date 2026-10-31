@@ -40,7 +40,17 @@ from sayso.ui import theme
 from sayso.winsys.hotkey_logic import Chord
 
 LOCKED_TIP = "Set by your organization"
-PROVIDER_KINDS = ["anthropic", "openai", "azure", "openrouter", "ollama", "lmstudio", "local", "custom", "offline"]
+PROVIDER_KINDS = [
+    "anthropic",
+    "openai",
+    "azure",
+    "openrouter",
+    "ollama",
+    "lmstudio",
+    "local",
+    "custom",
+    "offline",
+]
 FW_MODELS = ["tiny.en", "base.en", "small.en", "medium.en", "large-v3-turbo"]
 STT_ENGINES = ["faster_whisper", "whisper_cpp", "windows_speech", "cloud"]
 INJECTION_METHODS = ["auto", "paste", "clipboard", "accessibility", "keyboard"]
@@ -152,18 +162,39 @@ class ShortcutEdit(QWidget):
 
 
 def _has_mod(event, name: str) -> bool:
-    flag = {"ctrl": Qt.KeyboardModifier.ControlModifier, "alt": Qt.KeyboardModifier.AltModifier,
-            "shift": Qt.KeyboardModifier.ShiftModifier, "win": Qt.KeyboardModifier.MetaModifier}[name]
+    flag = {
+        "ctrl": Qt.KeyboardModifier.ControlModifier,
+        "alt": Qt.KeyboardModifier.AltModifier,
+        "shift": Qt.KeyboardModifier.ShiftModifier,
+        "win": Qt.KeyboardModifier.MetaModifier,
+    }[name]
     return bool(event.modifiers() & flag)
 
 
 def _qt_key_name(key: int) -> str:
     K = Qt.Key
-    table = {K.Key_Control: "ctrl", K.Key_Alt: "alt", K.Key_Shift: "shift", K.Key_Meta: "win", K.Key_Space: "space",
-             K.Key_Escape: "esc", K.Key_CapsLock: "capslock", K.Key_Tab: "tab", K.Key_Return: "enter",
-             K.Key_Backspace: "backspace", K.Key_Delete: "delete", K.Key_Insert: "insert", K.Key_Home: "home",
-             K.Key_End: "end", K.Key_PageUp: "pageup", K.Key_PageDown: "pagedown", K.Key_Left: "left",
-             K.Key_Right: "right", K.Key_Up: "up", K.Key_Down: "down"}
+    table = {
+        K.Key_Control: "ctrl",
+        K.Key_Alt: "alt",
+        K.Key_Shift: "shift",
+        K.Key_Meta: "win",
+        K.Key_Space: "space",
+        K.Key_Escape: "esc",
+        K.Key_CapsLock: "capslock",
+        K.Key_Tab: "tab",
+        K.Key_Return: "enter",
+        K.Key_Backspace: "backspace",
+        K.Key_Delete: "delete",
+        K.Key_Insert: "insert",
+        K.Key_Home: "home",
+        K.Key_End: "end",
+        K.Key_PageUp: "pageup",
+        K.Key_PageDown: "pagedown",
+        K.Key_Left: "left",
+        K.Key_Right: "right",
+        K.Key_Up: "up",
+        K.Key_Down: "down",
+    }
     if key in table:
         return table[key]
     if K.Key_F1 <= key <= K.Key_F24:
@@ -266,7 +297,9 @@ class SettingsWindow(QDialog):
     _progress = Signal(float)
     _downloaded = Signal(str)
 
-    def __init__(self, loaded: LoadedSettings, services: SettingsServices | None = None, parent: QWidget | None = None):
+    def __init__(
+        self, loaded: LoadedSettings, services: SettingsServices | None = None, parent: QWidget | None = None
+    ):
         super().__init__(parent)
         self.loaded = loaded
         self.svc = services or SettingsServices()
@@ -286,10 +319,17 @@ class SettingsWindow(QDialog):
         self.banner.setWordWrap(True)
         self.banner.setStyleSheet(f"color: {theme.TIDE};")
         self.banner.hide()
-        pages = [("General", self._page_general), ("Shortcuts", self._page_shortcuts),
-                 ("Microphone", self._page_mic), ("Speech engine", self._page_stt), ("AI", self._page_ai),
-                 ("Apps", self._page_apps), ("Words", self._page_words), ("Privacy", self._page_privacy),
-                 ("Diagnostics", self._page_diag)]
+        pages = [
+            ("General", self._page_general),
+            ("Shortcuts", self._page_shortcuts),
+            ("Microphone", self._page_mic),
+            ("Speech engine", self._page_stt),
+            ("AI", self._page_ai),
+            ("Apps", self._page_apps),
+            ("Words", self._page_words),
+            ("Privacy", self._page_privacy),
+            ("Diagnostics", self._page_diag),
+        ]
         for name, builder in pages:
             self.nav.addItem(name)
             self.stack.addWidget(builder())
@@ -327,6 +367,7 @@ class SettingsWindow(QDialog):
         if isinstance(widget, QCheckBox):
             get, set_ = widget.isChecked, widget.setChecked
         elif isinstance(widget, QComboBox):
+
             def get() -> Any:
                 data = widget.currentData()
                 if dotted == "audio.device":
@@ -346,7 +387,10 @@ class SettingsWindow(QDialog):
         elif isinstance(widget, ShortcutEdit):
             get, set_ = widget.text, widget.setText
         elif isinstance(widget, QLineEdit):
-            get, set_ = (lambda: widget.text().strip() or None) if dotted == "audio.device" else widget.text, widget.setText
+            get, set_ = (
+                (lambda: widget.text().strip() or None) if dotted == "audio.device" else widget.text,
+                widget.setText,
+            )
         else:
             raise TypeError(type(widget))
         self._bindings.append((dotted, get, set_, widget))
@@ -378,9 +422,20 @@ class SettingsWindow(QDialog):
         data["snippets"] = self.snippets.dump()
         data["privacy"]["blocked_apps"] = _lines(self.blocked.toPlainText())
         data["privacy"]["no_cloud_apps"] = _lines(self.no_cloud.toPlainText())
-        data["injection"]["app_overrides"] = {k: v for k, v in self.overrides.dump().items() if v in INJECTION_METHODS}
-        for key in ("stt.engines", "llm.chain", "llm.providers", "profiles", "vocabulary", "snippets",
-                    "privacy.blocked_apps", "privacy.no_cloud_apps", "injection.app_overrides"):
+        data["injection"]["app_overrides"] = {
+            k: v for k, v in self.overrides.dump().items() if v in INJECTION_METHODS
+        }
+        for key in (
+            "stt.engines",
+            "llm.chain",
+            "llm.providers",
+            "profiles",
+            "vocabulary",
+            "snippets",
+            "privacy.blocked_apps",
+            "privacy.no_cloud_apps",
+            "injection.app_overrides",
+        ):
             if self.loaded.is_locked(key):
                 _set(data, key, _get(self.loaded.settings.to_dict(), key))
         return Settings.from_dict(data)
@@ -430,8 +485,13 @@ class SettingsWindow(QDialog):
         mode = self._combo([(m.label, m.value) for m in USER_MODES])
         form.addRow("Default writing style", self.bind(mode, "general.default_mode"))
         form.addRow("Show the overlay", self.bind(QCheckBox(), "general.show_overlay"))
-        form.addRow("Overlay position", self.bind(self._combo([("Bottom of screen", "bottom"), ("Top of screen", "top")]),
-                                                 "general.overlay_position"))
+        form.addRow(
+            "Overlay position",
+            self.bind(
+                self._combo([("Bottom of screen", "bottom"), ("Top of screen", "top")]),
+                "general.overlay_position",
+            ),
+        )
         form.addRow("Play sounds", self.bind(QCheckBox(), "general.sounds"))
         self.autostart = QCheckBox()
         self.autostart.setChecked(self.svc.autostart_get())
@@ -445,13 +505,20 @@ class SettingsWindow(QDialog):
         return w
 
     def _page_shortcuts(self) -> QWidget:
-        w, lay = self._page("Shortcuts", "Hold the push-to-talk keys while you speak. Use the toggle to start and stop "
-                                       "hands-free. Hold the edit key with either to change selected text by voice.")
+        w, lay = self._page(
+            "Shortcuts",
+            "Hold the push-to-talk keys while you speak. Use the toggle to start and stop "
+            "hands-free. Hold the edit key with either to change selected text by voice.",
+        )
         form = QFormLayout()
         self.shortcut_edits: dict[str, ShortcutEdit] = {}
-        for label, key in (("Push to talk", "hotkeys.push_to_talk"), ("Toggle (press to start, again to stop)", "hotkeys.toggle"),
-                           ("Always listening on/off", "hotkeys.always_listening"), ("Edit-selection key", "hotkeys.command_modifier"),
-                           ("Cancel", "hotkeys.cancel")):
+        for label, key in (
+            ("Push to talk", "hotkeys.push_to_talk"),
+            ("Toggle (press to start, again to stop)", "hotkeys.toggle"),
+            ("Always listening on/off", "hotkeys.always_listening"),
+            ("Edit-selection key", "hotkeys.command_modifier"),
+            ("Cancel", "hotkeys.cancel"),
+        ):
             edit = ShortcutEdit(self.svc.pause_hotkeys)
             edit.changed.connect(lambda _=None: self._check_conflicts())
             self.shortcut_edits[key] = edit
@@ -506,7 +573,10 @@ class SettingsWindow(QDialog):
         self.calibrate_btn.setEnabled(self.svc.calibrate is not None)
         self.calibrate_btn.clicked.connect(self._calibrate)
         form.addRow("", self.calibrate_btn)
-        form.addRow("Pause that ends a phrase (ms, always listening)", self.bind(self._spin(200, 3000), "audio.end_of_speech_ms"))
+        form.addRow(
+            "Pause that ends a phrase (ms, always listening)",
+            self.bind(self._spin(200, 3000), "audio.end_of_speech_ms"),
+        )
         lay.addLayout(form)
         lay.addStretch(1)
         return w
@@ -538,20 +608,46 @@ class SettingsWindow(QDialog):
 
     def _page_stt(self) -> QWidget:
         w, lay = self._page("Speech engine", "Sayso tries engines from the top. Uncheck one to skip it.")
-        self.stt_order = _OrderedList({"faster_whisper": "Faster Whisper (local)", "whisper_cpp": "whisper.cpp (local)",
-                                       "windows_speech": "Windows Speech (built in)", "cloud": "Cloud transcription"})
+        self.stt_order = _OrderedList(
+            {
+                "faster_whisper": "Faster Whisper (local)",
+                "whisper_cpp": "whisper.cpp (local)",
+                "windows_speech": "Windows Speech (built in)",
+                "cloud": "Cloud transcription",
+            }
+        )
         self.stt_order.set_items(self.loaded.settings.stt.engines, STT_ENGINES)
         lay.addWidget(self.stt_order)
         for name, status in self.svc.stt_status():
             self.stt_order.set_status(name, status)
         form = QFormLayout()
-        form.addRow("Language", self.bind(self._combo([("English", "en"), ("Automatic", ""), ("Spanish", "es"), ("French", "fr"),
-                                                       ("German", "de"), ("Portuguese", "pt"), ("Hindi", "hi")], editable=False),
-                                           "stt.language"))
-        form.addRow("Faster Whisper model", self.bind(self._combo(FW_MODELS, editable=True), "stt.faster_whisper.model"))
+        form.addRow(
+            "Language",
+            self.bind(
+                self._combo(
+                    [
+                        ("English", "en"),
+                        ("Automatic", ""),
+                        ("Spanish", "es"),
+                        ("French", "fr"),
+                        ("German", "de"),
+                        ("Portuguese", "pt"),
+                        ("Hindi", "hi"),
+                    ],
+                    editable=False,
+                ),
+                "stt.language",
+            ),
+        )
+        form.addRow(
+            "Faster Whisper model",
+            self.bind(self._combo(FW_MODELS, editable=True), "stt.faster_whisper.model"),
+        )
         row = QHBoxLayout()
         self.dl_btn = QPushButton("Download model")
-        self.dl_btn.setEnabled(self.svc.download_model is not None and not self.loaded.settings.privacy.offline_only)
+        self.dl_btn.setEnabled(
+            self.svc.download_model is not None and not self.loaded.settings.privacy.offline_only
+        )
         self.dl_btn.clicked.connect(self._download)
         self.dl_bar = QProgressBar()
         self.dl_bar.setRange(0, 100)
@@ -592,12 +688,17 @@ class SettingsWindow(QDialog):
 
     def _key_field(self, field_: QLineEdit, ref: str) -> None:
         field_.setPlaceholderText("Saved" if ref and self.svc.secret_present(ref) else "Not set")
-        field_.textEdited.connect(lambda text, r=ref: self._pending_keys.__setitem__(r, text) if text else None)
+        field_.textEdited.connect(
+            lambda text, r=ref: self._pending_keys.__setitem__(r, text) if text else None
+        )
         if self.loaded.is_locked("llm.providers") or not ref:
             field_.setEnabled(bool(ref))
 
     def _page_ai(self) -> QWidget:
-        w, lay = self._page("AI", "Sayso asks the checked providers in order. The built-in offline writer is always the last resort.")
+        w, lay = self._page(
+            "AI",
+            "Sayso asks the checked providers in order. The built-in offline writer is always the last resort.",
+        )
         row = QHBoxLayout()
         self.chain_list = _OrderedList()
         self.chain_list.setMinimumWidth(190)
@@ -609,9 +710,15 @@ class SettingsWindow(QDialog):
         self.p_url, self.p_model = QLineEdit(), QLineEdit()
         self.p_deployment, self.p_version, self.p_effort = QLineEdit(), QLineEdit(), QLineEdit()
         self.p_key = QLineEdit(echoMode=QLineEdit.EchoMode.Password)
-        for label, widget in (("Type", self.p_kind), ("Address", self.p_url), ("Model", self.p_model),
-                              ("Azure deployment", self.p_deployment), ("Azure API version", self.p_version),
-                              ("Claude effort", self.p_effort), ("API key", self.p_key)):
+        for label, widget in (
+            ("Type", self.p_kind),
+            ("Address", self.p_url),
+            ("Model", self.p_model),
+            ("Azure deployment", self.p_deployment),
+            ("Azure API version", self.p_version),
+            ("Claude effort", self.p_effort),
+            ("API key", self.p_key),
+        ):
             form.addRow(label, widget)
         self.p_key.textEdited.connect(self._provider_key_edited)
         self.test_btn = QPushButton("Test")
@@ -626,7 +733,14 @@ class SettingsWindow(QDialog):
         if self.chain_list.list.count():
             self.chain_list.list.setCurrentRow(0)
         if self.loaded.is_locked("llm.providers"):
-            for wdg in (self.p_kind, self.p_url, self.p_model, self.p_deployment, self.p_version, self.p_effort):
+            for wdg in (
+                self.p_kind,
+                self.p_url,
+                self.p_model,
+                self.p_deployment,
+                self.p_version,
+                self.p_effort,
+            ):
                 wdg.setEnabled(False)
                 wdg.setToolTip(LOCKED_TIP)
         return w
@@ -639,12 +753,22 @@ class SettingsWindow(QDialog):
         self._current_provider = name
         p = self._providers[name]
         self.p_kind.setCurrentIndex(max(0, self.p_kind.findText(p.kind)))
-        for widget, value in ((self.p_url, p.base_url), (self.p_model, p.model), (self.p_deployment, p.deployment),
-                              (self.p_version, p.api_version), (self.p_effort, p.effort)):
+        for widget, value in (
+            (self.p_url, p.base_url),
+            (self.p_model, p.model),
+            (self.p_deployment, p.deployment),
+            (self.p_version, p.api_version),
+            (self.p_effort, p.effort),
+        ):
             widget.setText(value)
         self.p_key.clear()
-        self.p_key.setPlaceholderText("Saved" if p.api_key_ref and self.svc.secret_present(p.api_key_ref) else
-                                      "Not needed" if not p.api_key_ref else "Not set")
+        self.p_key.setPlaceholderText(
+            "Saved"
+            if p.api_key_ref and self.svc.secret_present(p.api_key_ref)
+            else "Not needed"
+            if not p.api_key_ref
+            else "Not set"
+        )
         self.p_key.setEnabled(bool(p.api_key_ref))
         self.test_result.setText("")
 
@@ -652,9 +776,16 @@ class SettingsWindow(QDialog):
         name = self._current_provider
         if name and name in self._providers:
             p = self._providers[name]
-            p.kind, p.base_url, p.model = self.p_kind.currentText(), self.p_url.text().strip(), self.p_model.text().strip()
-            p.deployment, p.api_version, p.effort = (self.p_deployment.text().strip(), self.p_version.text().strip(),
-                                                    self.p_effort.text().strip())
+            p.kind, p.base_url, p.model = (
+                self.p_kind.currentText(),
+                self.p_url.text().strip(),
+                self.p_model.text().strip(),
+            )
+            p.deployment, p.api_version, p.effort = (
+                self.p_deployment.text().strip(),
+                self.p_version.text().strip(),
+                self.p_effort.text().strip(),
+            )
 
     def _provider_key_edited(self, text: str) -> None:
         ref = self._providers[self._current_provider].api_key_ref if self._current_provider else ""
@@ -687,8 +818,11 @@ class SettingsWindow(QDialog):
         self.test_result.setText(f"Worked in {ms / 1000:.1f} s: {text}" if ok else f"Did not work: {text}")
 
     def _page_apps(self) -> QWidget:
-        w, lay = self._page("Apps", "Choose how Sayso writes in each program. Use the program's name as it appears in Task "
-                                  "Manager, without .exe.")
+        w, lay = self._page(
+            "Apps",
+            "Choose how Sayso writes in each program. Use the program's name as it appears in Task "
+            "Manager, without .exe.",
+        )
         self.profiles = QTableWidget(0, 3)
         self.profiles.setHorizontalHeaderLabels(["Programs (comma separated)", "Style", "Tone note"])
         self.profiles.horizontalHeader().setStretchLastSection(True)
@@ -698,8 +832,11 @@ class SettingsWindow(QDialog):
         for p in self.loaded.settings.profiles:
             self._add_profile(p)
         btns = QHBoxLayout()
-        for label, fn in (("Add", lambda: self._add_profile(AppProfile())), ("Use current app", self._add_current_app),
-                          ("Remove", self._remove_profile)):
+        for label, fn in (
+            ("Add", lambda: self._add_profile(AppProfile())),
+            ("Use current app", self._add_current_app),
+            ("Remove", self._remove_profile),
+        ):
             b = QPushButton(label)
             b.clicked.connect(fn)
             btns.addWidget(b)
@@ -745,15 +882,27 @@ class SettingsWindow(QDialog):
     def _dump_profiles(self) -> list[dict[str, Any]]:
         out = []
         for r in range(self.profiles.rowCount()):
-            procs = [p.strip() for p in (self.profiles.item(r, 0).text() if self.profiles.item(r, 0) else "").split(",") if p.strip()]
+            procs = [
+                p.strip()
+                for p in (self.profiles.item(r, 0).text() if self.profiles.item(r, 0) else "").split(",")
+                if p.strip()
+            ]
             if not procs:
                 continue
             mode = self.profiles.cellWidget(r, 1).currentData() or None
-            out.append({"processes": procs, "mode": mode, "tone": self.profiles.item(r, 2).text() if self.profiles.item(r, 2) else ""})
+            out.append(
+                {
+                    "processes": procs,
+                    "mode": mode,
+                    "tone": self.profiles.item(r, 2).text() if self.profiles.item(r, 2) else "",
+                }
+            )
         return out
 
     def _page_words(self) -> QWidget:
-        w, lay = self._page("Words", "Fix words Sayso mishears, and say a short phrase to insert longer text.")
+        w, lay = self._page(
+            "Words", "Fix words Sayso mishears, and say a short phrase to insert longer text."
+        )
         self.vocab = _KeyValueTable(("When it hears", "Write"))
         self.vocab.load(self.loaded.settings.vocabulary)
         self.snippets = _KeyValueTable(("When you say", "Insert"))
@@ -775,8 +924,13 @@ class SettingsWindow(QDialog):
         w, lay = self._page("Privacy")
         form = QFormLayout()
         form.addRow("Keep a history of dictations", self.bind(QCheckBox(), "privacy.history_enabled"))
-        form.addRow("Keep history for (days, 0 = forever)", self.bind(self._spin(0, 3650), "privacy.history_retention_days"))
-        form.addRow("Send app name and nearby text to the AI", self.bind(QCheckBox(), "privacy.share_context"))
+        form.addRow(
+            "Keep history for (days, 0 = forever)",
+            self.bind(self._spin(0, 3650), "privacy.history_retention_days"),
+        )
+        form.addRow(
+            "Send app name and nearby text to the AI", self.bind(QCheckBox(), "privacy.share_context")
+        )
         form.addRow("Offline only (never use the internet)", self.bind(QCheckBox(), "privacy.offline_only"))
         tele = QCheckBox("Sayso never sends usage data")
         tele.setChecked(False)
@@ -785,8 +939,10 @@ class SettingsWindow(QDialog):
         lay.addLayout(form)
         self.blocked = QPlainTextEdit("\n".join(self.loaded.settings.privacy.blocked_apps))
         self.no_cloud = QPlainTextEdit("\n".join(self.loaded.settings.privacy.no_cloud_apps))
-        for label, edit, key in (("Never listen in these programs (one per line)", self.blocked, "privacy.blocked_apps"),
-                                 ("Never use cloud AI in these programs", self.no_cloud, "privacy.no_cloud_apps")):
+        for label, edit, key in (
+            ("Never listen in these programs (one per line)", self.blocked, "privacy.blocked_apps"),
+            ("Never use cloud AI in these programs", self.no_cloud, "privacy.no_cloud_apps"),
+        ):
             lay.addWidget(QLabel(label))
             edit.setMaximumHeight(70)
             if self.loaded.is_locked(key):
@@ -840,5 +996,3 @@ class SettingsWindow(QDialog):
 
 def _lines(text: str) -> list[str]:
     return [ln.strip() for ln in text.splitlines() if ln.strip()]
-
-

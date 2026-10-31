@@ -53,8 +53,16 @@ class CapabilityReport:
     stt_engines: dict[str, Status] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return {k: (list(v) if isinstance(v, tuple) else {n: list(s) for n, s in v.items()} if isinstance(v, dict) else v)
-                for k, v in self.__dict__.items()}
+        return {
+            k: (
+                list(v)
+                if isinstance(v, tuple)
+                else {n: list(s) for n, s in v.items()}
+                if isinstance(v, dict)
+                else v
+            )
+            for k, v in self.__dict__.items()
+        }
 
 
 def http_reach(url: str, timeout: float = 1.5) -> Status:
@@ -79,12 +87,20 @@ def _cloud_urls(settings: Settings) -> list[str]:
     return list(dict.fromkeys(u for u in urls if u and "YOUR-RESOURCE" not in u))
 
 
-def probe(settings: Settings, paths: AppPaths, *, quick: bool = False, probes: Probes | None = None) -> CapabilityReport:
+def probe(
+    settings: Settings, paths: AppPaths, *, quick: bool = False, probes: Probes | None = None
+) -> CapabilityReport:
     p = probes or Probes()
     rep = CapabilityReport(
-        os=f"{platform.system()} {platform.release()} {platform.version()}", python=sys.version.split()[0],
-        frozen=bool(getattr(sys, "frozen", False)), portable=paths.portable, elevated=bool(p.elevated()),
-        microphone=p.microphone(), clipboard=p.clipboard(), keyboard_hook=p.keyboard_hook(), uia=p.uia(),
+        os=f"{platform.system()} {platform.release()} {platform.version()}",
+        python=sys.version.split()[0],
+        frozen=bool(getattr(sys, "frozen", False)),
+        portable=paths.portable,
+        elevated=bool(p.elevated()),
+        microphone=p.microphone(),
+        clipboard=p.clipboard(),
+        keyboard_hook=p.keyboard_hook(),
+        uia=p.uia(),
         powershell=p.powershell(),
     )
     if p.stt_engines:

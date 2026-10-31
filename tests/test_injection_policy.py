@@ -37,12 +37,24 @@ def test_terminals_prefer_paste_then_keyboard():
 
 def test_classic_edit_without_clipboard_uses_accessibility_first():
     assert choose_methods(T(control_class="RICHEDIT50W", clipboard_ok=False), "auto", {}) == [
-        "accessibility", "keyboard", "clipboard"]
+        "accessibility",
+        "keyboard",
+        "clipboard",
+    ]
 
 
 def test_default_order():
-    assert choose_methods(T(control_class="Chrome_RenderWidgetHostHWND"), "auto", {}) == ["paste", "keyboard", "clipboard"]
-    assert choose_methods(T(control_class="X", uia_ok=True), "auto", {}) == ["paste", "accessibility", "keyboard", "clipboard"]
+    assert choose_methods(T(control_class="Chrome_RenderWidgetHostHWND"), "auto", {}) == [
+        "paste",
+        "keyboard",
+        "clipboard",
+    ]
+    assert choose_methods(T(control_class="X", uia_ok=True), "auto", {}) == [
+        "paste",
+        "accessibility",
+        "keyboard",
+        "clipboard",
+    ]
     assert choose_methods(T(), "auto", {}) == ["paste", "accessibility", "keyboard", "clipboard"]
 
 

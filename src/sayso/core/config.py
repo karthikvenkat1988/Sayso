@@ -122,14 +122,29 @@ class ProviderSettings:
 
 def _default_providers() -> dict[str, ProviderSettings]:
     return {
-        "anthropic": ProviderSettings(kind="anthropic", model="claude-opus-5-5", api_key_ref="llm.anthropic", effort="low"),
-        "openai": ProviderSettings(kind="openai", base_url="https://api.openai.com/v1", model="gpt-4o-mini", api_key_ref="llm.openai"),
-        "azure": ProviderSettings(kind="azure", base_url="https://YOUR-RESOURCE.openai.azure.com", deployment="gpt-4o-mini",
-                                  api_version="2024-06-01", api_key_ref="llm.azure"),
-        "openrouter": ProviderSettings(kind="openrouter", base_url="https://openrouter.ai/api/v1", model="anthropic/claude-sonnet-5.5",
-                                       api_key_ref="llm.openrouter"),
+        "anthropic": ProviderSettings(
+            kind="anthropic", model="claude-opus-5-5", api_key_ref="llm.anthropic", effort="low"
+        ),
+        "openai": ProviderSettings(
+            kind="openai", base_url="https://api.openai.com/v1", model="gpt-4o-mini", api_key_ref="llm.openai"
+        ),
+        "azure": ProviderSettings(
+            kind="azure",
+            base_url="https://YOUR-RESOURCE.openai.azure.com",
+            deployment="gpt-4o-mini",
+            api_version="2024-06-01",
+            api_key_ref="llm.azure",
+        ),
+        "openrouter": ProviderSettings(
+            kind="openrouter",
+            base_url="https://openrouter.ai/api/v1",
+            model="anthropic/claude-sonnet-5.5",
+            api_key_ref="llm.openrouter",
+        ),
         "ollama": ProviderSettings(kind="ollama", base_url="http://127.0.0.1:11434/v1", model="llama3.2:3b"),
-        "lmstudio": ProviderSettings(kind="lmstudio", base_url="http://127.0.0.1:1234/v1", model="local-model"),
+        "lmstudio": ProviderSettings(
+            kind="lmstudio", base_url="http://127.0.0.1:1234/v1", model="local-model"
+        ),
         "local": ProviderSettings(kind="local", base_url="http://127.0.0.1:8080/v1", model="local"),
         "offline": ProviderSettings(kind="offline"),
     }
@@ -168,8 +183,11 @@ def _default_profiles() -> list[AppProfile]:
         AppProfile(["WINWORD", "POWERPNT"], Mode.PROFESSIONAL, "Clear document prose."),
         AppProfile(["ONENOTE"], Mode.MEETING_NOTES, ""),
         AppProfile(["EXCEL"], Mode.PROFESSIONAL, "Short spreadsheet comment."),
-        AppProfile(["Code", "devenv", "WindowsTerminal", "powershell", "cmd"], Mode.REWRITE_TEXT,
-                   "Technical. Keep identifiers, paths and commands verbatim."),
+        AppProfile(
+            ["Code", "devenv", "WindowsTerminal", "powershell", "cmd"],
+            Mode.REWRITE_TEXT,
+            "Technical. Keep identifiers, paths and commands verbatim.",
+        ),
     ]
 
 
@@ -183,7 +201,9 @@ class PrivacySettings:
     offline_only: bool = False
     # Telemetry is not implemented; this flag exists so policy can assert it.
     telemetry: bool = False
-    blocked_apps: list[str] = field(default_factory=lambda: ["KeePass", "KeePassXC", "1Password", "Bitwarden"])
+    blocked_apps: list[str] = field(
+        default_factory=lambda: ["KeePass", "KeePassXC", "1Password", "Bitwarden"]
+    )
     # Dictation in these apps never goes to a cloud provider.
     no_cloud_apps: list[str] = field(default_factory=list)
 
@@ -245,7 +265,9 @@ def _convert(tp: Any, value: Any) -> Any:
         return Mode(value)
     if tp is float and isinstance(value, int) and not isinstance(value, bool):
         return float(value)
-    if tp in (int, float, str, bool) and (not isinstance(value, tp) or (tp is not bool and isinstance(value, bool))):
+    if tp in (int, float, str, bool) and (
+        not isinstance(value, tp) or (tp is not bool and isinstance(value, bool))
+    ):
         raise TypeError(f"expected {tp.__name__}, got {type(value).__name__}")
     return value
 
@@ -263,7 +285,11 @@ def _from_dict(cls: type, data: dict[str, Any]) -> Any:
         try:
             if dataclasses.is_dataclass(tp) and isinstance(raw, dict):
                 kwargs[f.name] = _from_dict(tp, raw)
-            elif typing.get_origin(tp) is dict and isinstance(raw, dict) and dataclasses.is_dataclass(typing.get_args(tp)[1]):
+            elif (
+                typing.get_origin(tp) is dict
+                and isinstance(raw, dict)
+                and dataclasses.is_dataclass(typing.get_args(tp)[1])
+            ):
                 # Provider maps merge over defaults so a user can override one field of one provider.
                 base = getattr(defaults, f.name)
                 item_tp = typing.get_args(tp)[1]
@@ -309,7 +335,9 @@ class LoadedSettings:
     policy_present: bool
 
     def is_locked(self, dotted: str) -> bool:
-        return any(dotted == k or dotted.startswith(k + ".") or k.startswith(dotted + ".") for k in self.locked)
+        return any(
+            dotted == k or dotted.startswith(k + ".") or k.startswith(dotted + ".") for k in self.locked
+        )
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:

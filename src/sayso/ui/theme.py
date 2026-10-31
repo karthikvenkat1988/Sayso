@@ -84,11 +84,18 @@ QMenu::item:disabled {{ color: {MUTED}; }}
 def dark_palette() -> QPalette:
     p = QPalette()
     roles = {
-        QPalette.ColorRole.Window: INK, QPalette.ColorRole.WindowText: MIST, QPalette.ColorRole.Base: INK_2,
-        QPalette.ColorRole.AlternateBase: INK, QPalette.ColorRole.Text: MIST, QPalette.ColorRole.Button: INK_2,
-        QPalette.ColorRole.ButtonText: MIST, QPalette.ColorRole.Highlight: EMBER,
-        QPalette.ColorRole.HighlightedText: INK, QPalette.ColorRole.ToolTipBase: INK_2,
-        QPalette.ColorRole.ToolTipText: MIST, QPalette.ColorRole.PlaceholderText: MUTED,
+        QPalette.ColorRole.Window: INK,
+        QPalette.ColorRole.WindowText: MIST,
+        QPalette.ColorRole.Base: INK_2,
+        QPalette.ColorRole.AlternateBase: INK,
+        QPalette.ColorRole.Text: MIST,
+        QPalette.ColorRole.Button: INK_2,
+        QPalette.ColorRole.ButtonText: MIST,
+        QPalette.ColorRole.Highlight: EMBER,
+        QPalette.ColorRole.HighlightedText: INK,
+        QPalette.ColorRole.ToolTipBase: INK_2,
+        QPalette.ColorRole.ToolTipText: MIST,
+        QPalette.ColorRole.PlaceholderText: MUTED,
     }
     for role, color in roles.items():
         p.setColor(role, QColor(color))

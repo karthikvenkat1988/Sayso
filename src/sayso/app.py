@@ -47,8 +47,11 @@ def run(args: argparse.Namespace) -> int:
         if getattr(args, "offline", False):
             loaded.settings.privacy.offline_only = True
         creds = CredentialStore(paths)
-        history = History(paths.history_db, loaded.settings.privacy.history_enabled,
-                          loaded.settings.privacy.history_retention_days)
+        history = History(
+            paths.history_db,
+            loaded.settings.privacy.history_enabled,
+            loaded.settings.privacy.history_retention_days,
+        )
         controller = Controller(app, paths, loaded, creds, history)
 
         class Bridge(QObject):
@@ -63,7 +66,9 @@ def run(args: argparse.Namespace) -> int:
         return code
     except Exception as exc:
         log.exception("fatal error")
-        QMessageBox.critical(None, APP_NAME, f"Sayso could not start: {exc}\n\nDetails are in {paths.log_file}")
+        QMessageBox.critical(
+            None, APP_NAME, f"Sayso could not start: {exc}\n\nDetails are in {paths.log_file}"
+        )
         traceback.print_exc()
         return 1
     finally:

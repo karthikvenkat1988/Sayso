@@ -32,14 +32,24 @@ class AnthropicProvider(LLMProvider):
             kwargs["default_headers"] = dict(cfg.extra_headers)
         self._client = anthropic.Anthropic(**kwargs)
 
-    def rewrite(self, transcript: str, mode: Mode, ctx: PromptContext, *, share_context: bool,
-                timeout: float, on_delta: DeltaCallback | None = None) -> RewriteResult:
+    def rewrite(
+        self,
+        transcript: str,
+        mode: Mode,
+        ctx: PromptContext,
+        *,
+        share_context: bool,
+        timeout: float,
+        on_delta: DeltaCallback | None = None,
+    ) -> RewriteResult:
         a = self._anthropic
         params = {
             "model": self.cfg.model or "claude-opus-5-5",
             "max_tokens": 4096,
             "system": [{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
-            "messages": [{"role": "user", "content": build_user_message(transcript, mode, ctx, share_context)}],
+            "messages": [
+                {"role": "user", "content": build_user_message(transcript, mode, ctx, share_context)}
+            ],
             "output_config": {"effort": self.cfg.effort or "low"},
         }
         try:

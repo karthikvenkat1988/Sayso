@@ -19,7 +19,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--home", metavar="PATH", help="keep all data under PATH (implies portable)")
     p.add_argument("--offline", action="store_true", help="never use the internet for this run")
     p.add_argument("--diagnose", action="store_true", help="print what this PC allows Sayso to do, then exit")
-    p.add_argument("--transcribe", metavar="FILE.wav", help="transcribe and rewrite a WAV file, print the text")
+    p.add_argument(
+        "--transcribe", metavar="FILE.wav", help="transcribe and rewrite a WAV file, print the text"
+    )
     p.add_argument("--mode", default=None, help="writing mode for --transcribe (e.g. email_mode)")
     p.add_argument("--version", action="store_true")
     return p
@@ -45,11 +47,13 @@ def transcribe_file(path: str, settings, paths, secrets, mode: str | None = None
     from sayso.stt.registry import SttChain
 
     offline = settings.privacy.offline_only
-    stt = stt or SttChain.from_settings(settings.stt, models_dir=paths.models_dir, app_dir=app_dir(), secrets=secrets,
-                                        offline_only=offline)
+    stt = stt or SttChain.from_settings(
+        settings.stt, models_dir=paths.models_dir, app_dir=app_dir(), secrets=secrets, offline_only=offline
+    )
     llm = ProviderChain(settings.llm, secrets, offline_only=offline)
-    result = Pipeline(stt, llm, lambda: settings).run(read_wav(path), FocusContext(process="cli"),
-                                                       mode_override=Mode(mode) if mode else None)
+    result = Pipeline(stt, llm, lambda: settings).run(
+        read_wav(path), FocusContext(process="cli"), mode_override=Mode(mode) if mode else None
+    )
     return result.text or result.skipped_reason
 
 

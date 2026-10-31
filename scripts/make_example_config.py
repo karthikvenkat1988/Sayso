@@ -13,7 +13,9 @@ from sayso.core.config import Settings  # noqa: E402
 
 
 def main() -> None:
-    (ROOT / "config" / "settings.example.json").write_text(json.dumps(Settings().to_dict(), indent=2) + "\n", encoding="utf-8")
+    (ROOT / "config" / "settings.example.json").write_text(
+        json.dumps(Settings().to_dict(), indent=2) + "\n", encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":

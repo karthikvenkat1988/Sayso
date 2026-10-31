@@ -19,21 +19,26 @@ log = logging.getLogger(__name__)
 SecretLookup = Callable[[str], str | None]
 
 
-def create_engine(name: str, cfg: SttSettings, *, models_dir: Path, app_dir: Path, secrets: SecretLookup,
-                  offline_only: bool) -> STTEngine:
+def create_engine(
+    name: str, cfg: SttSettings, *, models_dir: Path, app_dir: Path, secrets: SecretLookup, offline_only: bool
+) -> STTEngine:
     if name == "faster_whisper":
         from sayso.stt.faster_whisper_engine import FasterWhisperEngine
+
         return FasterWhisperEngine(cfg.faster_whisper, models_dir, allow_download=not offline_only)
     if name == "whisper_cpp":
         from sayso.stt.whisper_cpp_engine import WhisperCppEngine
+
         return WhisperCppEngine(cfg.whisper_cpp, app_dir)
     if name == "windows_speech":
         from sayso.stt.windows_speech_engine import WindowsSpeechEngine
+
         return WindowsSpeechEngine(cfg.windows_speech)
     if name == "cloud":
         if offline_only:
             raise EngineUnavailable("cloud STT disabled in offline mode")
         from sayso.stt.cloud_engine import CloudWhisperEngine
+
         return CloudWhisperEngine(cfg.cloud, secrets(cfg.cloud.api_key_ref))
     for ep in entry_points(group="sayso.stt"):
         if ep.name == name:
@@ -62,11 +67,14 @@ class SttChain:
         self._lock = threading.Lock()
 
     @classmethod
-    def from_settings(cls, cfg: SttSettings, *, models_dir: Path, app_dir: Path, secrets: SecretLookup,
-                      offline_only: bool) -> SttChain:
+    def from_settings(
+        cls, cfg: SttSettings, *, models_dir: Path, app_dir: Path, secrets: SecretLookup, offline_only: bool
+    ) -> SttChain:
         def factory(n: str) -> Callable[[], STTEngine]:
-            return lambda: create_engine(n, cfg, models_dir=models_dir, app_dir=app_dir, secrets=secrets,
-                                         offline_only=offline_only)
+            return lambda: create_engine(
+                n, cfg, models_dir=models_dir, app_dir=app_dir, secrets=secrets, offline_only=offline_only
+            )
+
         return cls([(n, factory(n)) for n in cfg.engines])
 
     def _get(self, name: str, factory: Callable[[], STTEngine]) -> STTEngine:

@@ -62,10 +62,17 @@ class Pipeline:
         self.llm = llm
         self._settings = settings
 
-    def run(self, clip: AudioClip, ctx: FocusContext, *, mode_override: Mode | None = None, command: bool = False,
-            on_stage: Callable[[Stage], None] | None = None,
-            on_transcript: Callable[[str, float | None], None] | None = None,
-            on_delta: Callable[[str], None] | None = None) -> DictationResult:
+    def run(
+        self,
+        clip: AudioClip,
+        ctx: FocusContext,
+        *,
+        mode_override: Mode | None = None,
+        command: bool = False,
+        on_stage: Callable[[Stage], None] | None = None,
+        on_transcript: Callable[[str, float | None], None] | None = None,
+        on_delta: Callable[[str], None] | None = None,
+    ) -> DictationResult:
         s = self._settings()
         timings = Timings(audio_s=clip.seconds)
         resolved = resolve(s, ctx, mode_override, command=command and bool(ctx.selection))
@@ -83,13 +90,23 @@ class Pipeline:
         notes = [f"STT {n} skipped: {e}" for n, e in stt.attempts]
         if on_transcript:
             on_transcript(raw, stt.transcript.confidence)
-        base = DictationResult("", raw, resolved.mode, confidence=stt.transcript.confidence,
-                               stt_engine=stt.transcript.engine, timings=timings, notes=notes)
+        base = DictationResult(
+            "",
+            raw,
+            resolved.mode,
+            confidence=stt.transcript.confidence,
+            stt_engine=stt.transcript.engine,
+            timings=timings,
+            notes=notes,
+        )
         if not raw:
             base.skipped_reason = "nothing recognised"
             return base
 
-        if resolved.mode is not Mode.COMMAND and (snippet := textproc.match_snippet(raw, s.snippets)) is not None:
+        if (
+            resolved.mode is not Mode.COMMAND
+            and (snippet := textproc.match_snippet(raw, s.snippets)) is not None
+        ):
             base.text, base.llm_provider = snippet, "snippet"
             return self._done(base, on_stage)
 
@@ -104,10 +121,21 @@ class Pipeline:
 
         if on_stage:
             on_stage(Stage.REWRITING)
-        pctx = PromptContext(app=ctx.process, window_title=ctx.window_title, text_before_cursor=ctx.text_before_cursor,
-                             selection=ctx.selection, tone=resolved.tone)
-        outcome = self.llm.rewrite(raw, resolved.mode, pctx, share_context=s.privacy.share_context,
-                                   allow_cloud=resolved.allow_cloud, on_delta=on_delta)
+        pctx = PromptContext(
+            app=ctx.process,
+            window_title=ctx.window_title,
+            text_before_cursor=ctx.text_before_cursor,
+            selection=ctx.selection,
+            tone=resolved.tone,
+        )
+        outcome = self.llm.rewrite(
+            raw,
+            resolved.mode,
+            pctx,
+            share_context=s.privacy.share_context,
+            allow_cloud=resolved.allow_cloud,
+            on_delta=on_delta,
+        )
         timings.llm_s = outcome.seconds
         base.text = textproc.strip_model_wrapping(outcome.result.text)
         base.llm_provider = outcome.result.provider
@@ -119,8 +147,15 @@ class Pipeline:
     def _done(r: DictationResult, on_stage: Callable[[Stage], None] | None) -> DictationResult:
         if on_stage:
             on_stage(Stage.DONE)
-        log.info("dictation mode=%s stt=%s(%.0fms) ai=%s(%.0fms) chars=%d", r.mode, r.stt_engine, r.timings.stt_s * 1000,
-                 r.llm_provider, r.timings.llm_s * 1000, len(r.text))
+        log.info(
+            "dictation mode=%s stt=%s(%.0fms) ai=%s(%.0fms) chars=%d",
+            r.mode,
+            r.stt_engine,
+            r.timings.stt_s * 1000,
+            r.llm_provider,
+            r.timings.llm_s * 1000,
+            len(r.text),
+        )
         return r
 
 
@@ -140,5 +175,3 @@ def join_with_context(text: str, ctx: FocusContext, replace_selection: bool) -> 
     if last.isspace() or text[0].isspace() or text[0] in ",.;:!?)":
         return text
     return " " + text
-
-

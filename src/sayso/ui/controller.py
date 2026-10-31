@@ -87,10 +87,22 @@ class Controller(QObject):
     _warm = Signal(str)
     _notify = Signal(str, str, bool)
 
-    def __init__(self, app: QApplication, paths: AppPaths, loaded: LoadedSettings, creds: CredentialStore,
-                 history: History, *, hotkeys=None, audio: AudioCapture | None = None, injector=None,
-                 capture_context: Callable[[int], FocusContext] | None = None,
-                 foreground: Callable[[], int] | None = None, tray: Tray | None = None, enable_tray: bool = True):
+    def __init__(
+        self,
+        app: QApplication,
+        paths: AppPaths,
+        loaded: LoadedSettings,
+        creds: CredentialStore,
+        history: History,
+        *,
+        hotkeys=None,
+        audio: AudioCapture | None = None,
+        injector=None,
+        capture_context: Callable[[int], FocusContext] | None = None,
+        foreground: Callable[[], int] | None = None,
+        tray: Tray | None = None,
+        enable_tray: bool = True,
+    ):
         super().__init__()
         self.app, self.paths, self.loaded, self.creds, self.history = app, paths, loaded, creds, history
         self.metrics = LocalMetrics()
@@ -151,8 +163,13 @@ class Controller(QObject):
         s = self.settings
         app_root = app_dir()
         offline = s.privacy.offline_only
-        self.stt = SttChain.from_settings(s.stt, models_dir=self.paths.models_dir, app_dir=app_root,
-                                          secrets=self.creds.get, offline_only=offline)
+        self.stt = SttChain.from_settings(
+            s.stt,
+            models_dir=self.paths.models_dir,
+            app_dir=app_root,
+            secrets=self.creds.get,
+            offline_only=offline,
+        )
         self.llm = ProviderChain(s.llm, self.creds.get, offline_only=offline)
         self.pipeline = Pipeline(self.stt, self.llm, lambda: self.settings)
         self.injector = self._injector_override or Injector(s.injection)
@@ -185,9 +202,11 @@ class Controller(QObject):
         h.backend_changed.connect(self._on_backend)
 
         if self._enable_tray and self.tray is None:
-            self.tray = Tray(show_always_listening=self.settings.activation.always_listening_allowed,
-                             offline_locked=self.loaded.is_locked("privacy.offline_only"),
-                             managed=self.loaded.policy_present)
+            self.tray = Tray(
+                show_always_listening=self.settings.activation.always_listening_allowed,
+                offline_locked=self.loaded.is_locked("privacy.offline_only"),
+                managed=self.loaded.policy_present,
+            )
         if self.tray:
             self._wire_tray()
             self.tray.set_tooltip(self._tooltip())
@@ -226,7 +245,9 @@ class Controller(QObject):
         t.open_history.connect(self.show_history)
         t.open_settings.connect(self.show_settings)
         t.open_diagnostics.connect(lambda: self.show_settings(page="Diagnostics"))
-        t.open_logs.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.paths.log_file.parent))))
+        t.open_logs.connect(
+            lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.paths.log_file.parent)))
+        )
         t.quit_requested.connect(self.app.quit)
         t.offline_action.setChecked(self.settings.privacy.offline_only)
 
@@ -277,7 +298,9 @@ class Controller(QObject):
     def _set_offline(self, on: bool) -> None:
         if self.loaded.is_locked("privacy.offline_only"):
             return
-        s = dataclasses.replace(self.settings, privacy=dataclasses.replace(self.settings.privacy, offline_only=on))
+        s = dataclasses.replace(
+            self.settings, privacy=dataclasses.replace(self.settings.privacy, offline_only=on)
+        )
         self._save_and_apply(s)
 
     def _engage_command(self) -> None:
@@ -287,7 +310,11 @@ class Controller(QObject):
 
     def _on_backend(self, name: str) -> None:
         if name == "registerhotkey":
-            self._notify.emit("Sayso", "Push-to-talk unavailable on this PC. Press Ctrl+Alt+Space to start and again to stop.", True)
+            self._notify.emit(
+                "Sayso",
+                "Push-to-talk unavailable on this PC. Press Ctrl+Alt+Space to start and again to stop.",
+                True,
+            )
         elif name == "none":
             self._notify.emit("Sayso", "Use the tray icon to dictate.", True)
 
@@ -309,7 +336,13 @@ class Controller(QObject):
             self._fail(str(exc))
             return
         self._recording, self._kind, self._command = True, kind, command
-        state = OverlayState.COMMAND if command else OverlayState.RECORDING if kind == "ptt" else OverlayState.HANDS_FREE
+        state = (
+            OverlayState.COMMAND
+            if command
+            else OverlayState.RECORDING
+            if kind == "ptt"
+            else OverlayState.HANDS_FREE
+        )
         self.overlay.set_mode("")
         if self.settings.general.show_overlay:
             self.overlay.set_state(state)
@@ -369,8 +402,15 @@ class Controller(QObject):
         mode_override = self._mode_override
         self._worker.submit(self._job, clip, ctx_future, hwnd, command, mode_override, cancel)
 
-    def _job(self, clip: AudioClip, ctx_future: Future | None, hwnd: int, command: bool, mode_override: Mode | None,
-             cancel: threading.Event) -> None:
+    def _job(
+        self,
+        clip: AudioClip,
+        ctx_future: Future | None,
+        hwnd: int,
+        command: bool,
+        mode_override: Mode | None,
+        cancel: threading.Event,
+    ) -> None:
         out = JobOutcome()
         try:
             ctx = FocusContext(hwnd=hwnd)
@@ -387,10 +427,14 @@ class Controller(QObject):
             if cancel.is_set():
                 raise _Cancelled
             result = self.pipeline.run(
-                clip, ctx, mode_override=mode_override, command=command,
+                clip,
+                ctx,
+                mode_override=mode_override,
+                command=command,
                 on_stage=lambda st: self._stage.emit(st.value),
                 on_transcript=lambda t, c: self._transcript.emit(t, c),
-                on_delta=lambda d: self._delta.emit(d))
+                on_delta=lambda d: self._delta.emit(d),
+            )
             out.result = result
             if cancel.is_set():
                 raise _Cancelled
@@ -399,13 +443,28 @@ class Controller(QObject):
                 return
             text = join_with_context(result.text, ctx, result.replace_selection)
             report = self.injector.insert(text, ctx, replace_selection=result.replace_selection)
-            out.insert_method, out.insert_ok, out.manual_paste = report.method, report.ok, report.needs_manual_paste
+            out.insert_method, out.insert_ok, out.manual_paste = (
+                report.method,
+                report.ok,
+                report.needs_manual_paste,
+            )
             out.insert_ms, out.elevated = report.ms, ctx.is_elevated_target
-            self.history.add(app=ctx.process, mode=result.mode.value, transcript=result.transcript, text=result.text,
-                             stt_engine=result.stt_engine, llm_provider=result.llm_provider,
-                             latency_ms=result.timings.after_release_ms + report.ms, confidence=result.confidence)
-            self.metrics.add(LatencySample(int(result.timings.stt_s * 1000), int(result.timings.llm_s * 1000), report.ms))
-            log.info("inserted via %s in %d ms (tried %s)", report.method, report.ms, [t[0] for t in report.tried])
+            self.history.add(
+                app=ctx.process,
+                mode=result.mode.value,
+                transcript=result.transcript,
+                text=result.text,
+                stt_engine=result.stt_engine,
+                llm_provider=result.llm_provider,
+                latency_ms=result.timings.after_release_ms + report.ms,
+                confidence=result.confidence,
+            )
+            self.metrics.add(
+                LatencySample(int(result.timings.stt_s * 1000), int(result.timings.llm_s * 1000), report.ms)
+            )
+            log.info(
+                "inserted via %s in %d ms (tried %s)", report.method, report.ms, [t[0] for t in report.tried]
+            )
         except _Cancelled:
             out.cancelled = True
         except Exception as exc:
@@ -458,17 +517,27 @@ class Controller(QObject):
             self.overlay.set_confidence(r.confidence)
             if not out.insert_ok:
                 self._play("error")
-                self.overlay.set_state(OverlayState.ERROR, "Couldn't insert the text. It is saved in History.")
+                self.overlay.set_state(
+                    OverlayState.ERROR, "Couldn't insert the text. It is saved in History."
+                )
             elif out.manual_paste:
-                msg = ("Can't type into an admin window. Copied. Press Ctrl+V." if out.elevated
-                       else "Copied. Press Ctrl+V")
+                msg = (
+                    "Can't type into an admin window. Copied. Press Ctrl+V."
+                    if out.elevated
+                    else "Copied. Press Ctrl+V"
+                )
                 self.overlay.set_state(OverlayState.SUCCESS, msg)
             else:
                 self.overlay.set_state(OverlayState.SUCCESS, f"Inserted · {total / 1000:.1f} s")
             self.dictated.emit(r)
             if self.history_window is not None and self.history_window.isVisible():
                 self.history_window.refresh()
-        if self._always_on and not self._inflight and not self._recording and (out.result is None or not out.result.text):
+        if (
+            self._always_on
+            and not self._inflight
+            and not self._recording
+            and (out.result is None or not out.result.text)
+        ):
             QTimer.singleShot(1200, self._restore_listening_pill)
 
     def _restore_listening_pill(self) -> None:
@@ -552,7 +621,9 @@ class Controller(QObject):
             self._watcher.addPath(path)
 
     def reload_settings(self) -> None:
-        self.loaded = load_settings(self.paths.settings_file, self.paths.policy_file if self.paths.policy_file.exists() else None)
+        self.loaded = load_settings(
+            self.paths.settings_file, self.paths.policy_file if self.paths.policy_file.exists() else None
+        )
         self._apply_loaded()
 
     def _apply_loaded(self) -> None:
@@ -580,13 +651,17 @@ class Controller(QObject):
     def _first_run(self) -> None:
         w = self.show_settings(page="AI")
         hk = self.settings.hotkeys
-        w.show_welcome(f"Welcome to Sayso. Hold {hk.push_to_talk} and speak; let go and the text appears where you are typing. "
-                       f"Double-tap {hk.toggle.split('*')[0]} or press {hk.toggle} to dictate hands-free. Add an AI key below, "
-                       "or leave it: Sayso still cleans up your words offline.")
+        w.show_welcome(
+            f"Welcome to Sayso. Hold {hk.push_to_talk} and speak; let go and the text appears where you are typing. "
+            f"Double-tap {hk.toggle.split('*')[0]} or press {hk.toggle} to dictate hands-free. Add an AI key below, "
+            "or leave it: Sayso still cleans up your words offline."
+        )
 
     def show_history(self) -> None:
         if self.history_window is None:
-            self.history_window = HistoryWindow(self.history, lambda: self.settings.privacy.history_retention_days)
+            self.history_window = HistoryWindow(
+                self.history, lambda: self.settings.privacy.history_retention_days
+            )
             self.history_window.insert_again.connect(self._insert_again)
         self.history_window.refresh()
         self.history_window.show()
@@ -629,15 +704,27 @@ class Controller(QObject):
         def diagnostics() -> dict:
             from sayso.runtime_probes import build_probes
 
-            return capabilities.probe(self.settings, self.paths, probes=build_probes(self.stt, self.llm)).to_dict()
+            return capabilities.probe(
+                self.settings, self.paths, probes=build_probes(self.stt, self.llm)
+            ).to_dict()
 
         return SettingsServices(
-            devices=AudioCapture.devices, stt_status=self.stt.status, diagnostics=diagnostics,
-            test_provider=self._test_provider, calibrate=self._calibrate, download_model=self._download_model,
-            last_foreground_process=lambda: self._last_foreground_process, pause_hotkeys=hotkeys_paused,
-            autostart_get=lambda: _safe(autostart.is_enabled, False), autostart_set=self._set_autostart,
-            secret_present=self.creds.has, secret_set=self.creds.set, data_dir=str(self.paths.data_dir),
-            delete_history=self.history.clear, fix_hints=FIX_HINTS)
+            devices=AudioCapture.devices,
+            stt_status=self.stt.status,
+            diagnostics=diagnostics,
+            test_provider=self._test_provider,
+            calibrate=self._calibrate,
+            download_model=self._download_model,
+            last_foreground_process=lambda: self._last_foreground_process,
+            pause_hotkeys=hotkeys_paused,
+            autostart_get=lambda: _safe(autostart.is_enabled, False),
+            autostart_set=self._set_autostart,
+            secret_present=self.creds.has,
+            secret_set=self.creds.set,
+            data_dir=str(self.paths.data_dir),
+            delete_history=self.history.clear,
+            fix_hints=FIX_HINTS,
+        )
 
     def _set_autostart(self, on: bool) -> None:
         import sys
@@ -655,14 +742,18 @@ class Controller(QObject):
     def _test_provider(self, name: str, cfg: ProviderSettings, key: str | None) -> tuple[bool, int, str]:
         from sayso.llm.registry import create_provider
 
-
         def secrets(ref: str) -> str | None:
             return key or self.creds.get(ref)
 
         provider = create_provider(name, cfg, secrets)
         t0 = time.perf_counter()
-        res = provider.rewrite("hey can you tell john I'll be late", Mode.CHAT, PromptContext(), share_context=False,
-                               timeout=max(6.0, self.settings.llm.timeout_s))
+        res = provider.rewrite(
+            "hey can you tell john I'll be late",
+            Mode.CHAT,
+            PromptContext(),
+            share_context=False,
+            timeout=max(6.0, self.settings.llm.timeout_s),
+        )
         provider.close()
         return bool(res.text), int((time.perf_counter() - t0) * 1000), res.text[:120]
 
@@ -677,7 +768,7 @@ class Controller(QObject):
         finally:
             cap.close()
         n = clip.sample_rate * 30 // 1000
-        levels = [frame_db(clip.samples[i:i + n]) for i in range(0, len(clip.samples) - n, n)]
+        levels = [frame_db(clip.samples[i : i + n]) for i in range(0, len(clip.samples) - n, n)]
         return sorted(levels)[len(levels) // 2] if levels else None
 
     def _download_model(self, model: str, progress: Callable[[float], None]) -> str:
@@ -700,8 +791,10 @@ class Controller(QObject):
             return
         ready = [n for n, s in self.stt.status() if s == "ready"]
         providers = [n for n, ok, _ in self.llm.status if ok]
-        self.tray.set_tooltip(f"Sayso · {ready[0] if ready else 'no speech engine'} · {providers[0] if providers else 'offline'}\n"
-                              f"Hold {self.settings.hotkeys.push_to_talk} to dictate")
+        self.tray.set_tooltip(
+            f"Sayso · {ready[0] if ready else 'no speech engine'} · {providers[0] if providers else 'offline'}\n"
+            f"Hold {self.settings.hotkeys.push_to_talk} to dictate"
+        )
         if not ready:
             self.tray.notify("Sayso", "No speech engine is ready. Open Settings > Diagnostics.", True)
 

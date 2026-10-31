@@ -41,12 +41,15 @@ def test_logging_setup_creates_file(tmp_path):
 
 @respx.mock
 def test_cloud_openai_and_azure():
-    route = respx.post("https://api.openai.com/v1/audio/transcriptions").mock(return_value=httpx.Response(200, json={"text": " hi "}))
+    route = respx.post("https://api.openai.com/v1/audio/transcriptions").mock(
+        return_value=httpx.Response(200, json={"text": " hi "})
+    )
     eng = CloudWhisperEngine(CloudSttSettings(), "sk")
     assert eng.transcribe(make_clip(), language="en", prompt="p").text == "hi"
     assert route.calls.last.request.headers["authorization"] == "Bearer sk"
     az = respx.post("https://r.openai.azure.com/openai/deployments/d/audio/transcriptions").mock(
-        return_value=httpx.Response(200, json={"text": "az"}))
+        return_value=httpx.Response(200, json={"text": "az"})
+    )
     cfg = CloudSttSettings(kind="azure", base_url="https://r.openai.azure.com/openai/deployments/d")
     assert CloudWhisperEngine(cfg, "k").transcribe(make_clip(), language=None, prompt=None).text == "az"
     assert az.calls.last.request.headers["api-key"] == "k"

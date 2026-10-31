@@ -45,8 +45,13 @@ def test_password_field(settings):
 def test_rewrite_path_and_timings(settings):
     p, prov = build(settings)
     stages, previews, deltas = [], [], []
-    r = p.run(make_clip(), FocusContext(process="notepad"), on_stage=stages.append,
-              on_transcript=lambda t, c: previews.append((t, c)), on_delta=deltas.append)
+    r = p.run(
+        make_clip(),
+        FocusContext(process="notepad"),
+        on_stage=stages.append,
+        on_transcript=lambda t, c: previews.append((t, c)),
+        on_delta=deltas.append,
+    )
     assert r.text == "Polished text." and r.llm_provider == "ai" and r.stt_engine == "fake"
     assert r.transcript == LONG and r.confidence == 0.9
     assert stages == [Stage.TRANSCRIBING, Stage.REWRITING, Stage.DONE]

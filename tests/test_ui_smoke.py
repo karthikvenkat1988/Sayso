@@ -53,8 +53,12 @@ def test_overlay_never_takes_focus_flags(qtbot):
     o = Overlay()
     qtbot.addWidget(o)
     flags = o.windowFlags()
-    for f in (Qt.WindowType.WindowStaysOnTopHint, Qt.WindowType.WindowDoesNotAcceptFocus,
-              Qt.WindowType.WindowTransparentForInput, Qt.WindowType.FramelessWindowHint):
+    for f in (
+        Qt.WindowType.WindowStaysOnTopHint,
+        Qt.WindowType.WindowDoesNotAcceptFocus,
+        Qt.WindowType.WindowTransparentForInput,
+        Qt.WindowType.FramelessWindowHint,
+    ):
         assert flags & f
 
 
@@ -92,7 +96,9 @@ def test_settings_edits_flow_into_settings(qtbot):
     w.vocab.add_row("say so", "Sayso")
     w.snippets.add_row("my sig", "Best, K")
     w.vad.setValue(-50)
-    w.stt_order.list.item(0).setCheckState(__import__("PySide6.QtCore", fromlist=["Qt"]).Qt.CheckState.Unchecked)
+    w.stt_order.list.item(0).setCheckState(
+        __import__("PySide6.QtCore", fromlist=["Qt"]).Qt.CheckState.Unchecked
+    )
     s = w.collect()
     assert s.vocabulary == {"say so": "Sayso"} and s.snippets == {"my sig": "Best, K"}
     assert s.audio.vad_threshold_db == -50
@@ -126,8 +132,14 @@ def test_save_emits_and_stores_keys(qtbot):
 
 
 def test_diagnostics_page_renders(qtbot):
-    svc = SettingsServices(diagnostics=lambda: {"microphone": ["blocked", "denied"], "os": "Win", "stt_engines": {"a": ["ok", ""]}},
-                           fix_hints={"microphone": "Turn it on"})
+    svc = SettingsServices(
+        diagnostics=lambda: {
+            "microphone": ["blocked", "denied"],
+            "os": "Win",
+            "stt_engines": {"a": ["ok", ""]},
+        },
+        fix_hints={"microphone": "Turn it on"},
+    )
     w = SettingsWindow(LoadedSettings(Settings(), set(), False), svc)
     qtbot.addWidget(w)
     w.run_diagnostics()
@@ -150,8 +162,16 @@ def test_device_combo_stores_none_for_default(qtbot):
 def test_history_window_lists_and_searches(qtbot, tmp_path):
     h = History(tmp_path / "h.db")
     for t in ("alpha text", "beta text"):
-        h.add(app="notepad", mode="chat_mode", transcript="raw", text=t, stt_engine="f", llm_provider="p",
-              latency_ms=900, confidence=None)
+        h.add(
+            app="notepad",
+            mode="chat_mode",
+            transcript="raw",
+            text=t,
+            stt_engine="f",
+            llm_provider="p",
+            latency_ms=900,
+            confidence=None,
+        )
     w = HistoryWindow(h)
     qtbot.addWidget(w)
     assert w.list.count() == 2 and "2 dictations" in w.footer.text()

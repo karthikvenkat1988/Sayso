@@ -13,8 +13,10 @@ from sayso.stt.base import AudioClip
 
 log = logging.getLogger(__name__)
 
-PRIVACY_HINT = ("Microphone access is off. Turn on Settings > Privacy > Microphone > "
-                "Let desktop apps access your microphone.")
+PRIVACY_HINT = (
+    "Microphone access is off. Turn on Settings > Privacy > Microphone > "
+    "Let desktop apps access your microphone."
+)
 
 
 class MicrophoneUnavailable(Exception):
@@ -25,8 +27,14 @@ class AudioCapture:
     on_level: Callable[[float], None] | None = None
     on_frame: Callable[[np.ndarray], None] | None = None
 
-    def __init__(self, sample_rate: int = 16000, device: str | None = None, block_ms: int = 30,
-                 max_seconds: int = 300, pre_roll_ms: int = 300):
+    def __init__(
+        self,
+        sample_rate: int = 16000,
+        device: str | None = None,
+        block_ms: int = 30,
+        max_seconds: int = 300,
+        pre_roll_ms: int = 300,
+    ):
         self.sample_rate = sample_rate
         self.device = device
         self.block_ms = block_ms
@@ -66,8 +74,14 @@ class AudioCapture:
             try:
                 self._native_rate = rate
                 self._stream = sd.InputStream(
-                    samplerate=rate, channels=1, dtype="float32", device=device,
-                    blocksize=rate * self.block_ms // 1000, latency="low", callback=self._callback)
+                    samplerate=rate,
+                    channels=1,
+                    dtype="float32",
+                    device=device,
+                    blocksize=rate * self.block_ms // 1000,
+                    latency="low",
+                    callback=self._callback,
+                )
                 self._stream.start()
                 return
             except Exception as exc:
@@ -106,7 +120,9 @@ class AudioCapture:
         try:
             import sounddevice as sd
 
-            return [(str(i), d["name"]) for i, d in enumerate(sd.query_devices()) if d["max_input_channels"] > 0]
+            return [
+                (str(i), d["name"]) for i, d in enumerate(sd.query_devices()) if d["max_input_channels"] > 0
+            ]
         except Exception:
             return []
 
@@ -119,7 +135,9 @@ class AudioCapture:
         """Accepts one block of mono float32 at the native rate. Called from the audio thread."""
         if self._native_rate != self.sample_rate and block.size:
             n = max(1, round(block.size * self.sample_rate / self._native_rate))
-            block = np.interp(np.linspace(0, block.size - 1, n), np.arange(block.size), block).astype("float32")
+            block = np.interp(np.linspace(0, block.size - 1, n), np.arange(block.size), block).astype(
+                "float32"
+            )
         n = block.size
         if n == 0:
             return
@@ -127,9 +145,9 @@ class AudioCapture:
         with self._lock:
             idx = self._total % cap
             first = min(n, cap - idx)
-            self._ring[idx:idx + first] = block[:first]
+            self._ring[idx : idx + first] = block[:first]
             if first < n:
-                self._ring[:n - first] = block[first:]
+                self._ring[: n - first] = block[first:]
             self._total += n
         if self.on_level:
             self.on_level(float(np.max(np.abs(block))))

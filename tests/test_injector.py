@@ -16,8 +16,14 @@ class Rec(InjectionMethod):
 def build(settings=None, **fails):
     methods = {n: Rec(n, fails.get(n)) for n in ("paste", "accessibility", "keyboard", "clipboard")}
     prepared = []
-    inj = Injector(settings or InjectionSettings(), methods=methods, prepare=prepared.append,
-                   clipboard_ok=lambda: True, uia_ok=lambda: False, remote=lambda: False)
+    inj = Injector(
+        settings or InjectionSettings(),
+        methods=methods,
+        prepare=prepared.append,
+        clipboard_ok=lambda: True,
+        uia_ok=lambda: False,
+        remote=lambda: False,
+    )
     return inj, methods, prepared
 
 
@@ -39,7 +45,9 @@ def test_falls_through_failures_in_order():
 
 
 def test_clipboard_last_resort_needs_manual_paste():
-    inj, m, _ = build(paste=InjectionFailed("a"), accessibility=InjectionFailed("b"), keyboard=InjectionFailed("c"))
+    inj, m, _ = build(
+        paste=InjectionFailed("a"), accessibility=InjectionFailed("b"), keyboard=InjectionFailed("c")
+    )
     r = inj.insert("hi", CTX)
     assert r.method == "clipboard" and r.ok and r.needs_manual_paste
 
@@ -51,8 +59,12 @@ def test_elevated_target_goes_straight_to_clipboard():
 
 
 def test_everything_failing_reports_not_ok():
-    inj, _, _ = build(paste=InjectionFailed("a"), accessibility=InjectionFailed("b"), keyboard=InjectionFailed("c"),
-                      clipboard=InjectionFailed("d"))
+    inj, _, _ = build(
+        paste=InjectionFailed("a"),
+        accessibility=InjectionFailed("b"),
+        keyboard=InjectionFailed("c"),
+        clipboard=InjectionFailed("d"),
+    )
     r = inj.insert("hi", CTX)
     assert not r.ok and r.method == "none" and len(r.tried) == 4
 

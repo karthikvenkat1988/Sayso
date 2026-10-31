@@ -39,8 +39,11 @@ class FakeHotkeys(QObject):
     def start(self): ...
     def stop(self): ...
     def reconfigure(self, *a): ...
-    def set_processing(self, busy): self.processing.append(busy)
-    def force_idle(self): self.idle += 1
+    def set_processing(self, busy):
+        self.processing.append(busy)
+
+    def force_idle(self):
+        self.idle += 1
 
 
 class FakeAudio:
@@ -55,9 +58,13 @@ class FakeAudio:
             raise self.fail
         self.started += 1
 
-    def stop(self): return self.clip
+    def stop(self):
+        return self.clip
+
     def cancel(self): ...
-    def close(self): self.closed += 1
+    def close(self):
+        self.closed += 1
+
     def open(self): ...
 
 
@@ -70,7 +77,8 @@ class FakeInjector:
         self.inserted.append((text, replace_selection))
         return InsertReport("clipboard" if self.manual else "paste", self.ok, 12, [], self.manual)
 
-    def copy_selection(self): return "selected text"
+    def copy_selection(self):
+        return "selected text"
 
 
 @pytest.fixture
@@ -78,19 +86,41 @@ def make(qtbot, tmp_paths, monkeypatch):
     save_settings(Settings(), tmp_paths.settings_file)
     made = []
 
-    def build(text="please send the quarterly report to the finance team before friday", clip=None, ctx=None, audio_fail=None,
-              injector=None, provider=None, settings=None):
+    def build(
+        text="please send the quarterly report to the finance team before friday",
+        clip=None,
+        ctx=None,
+        audio_fail=None,
+        injector=None,
+        provider=None,
+        settings=None,
+    ):
         loaded = LoadedSettings(settings or Settings(), set(), False)
         hist = History(tmp_paths.history_db)
         hk, audio = FakeHotkeys(), FakeAudio(clip or make_clip(), audio_fail)
         inj = injector or FakeInjector()
-        c = Controller(qtbot.app if hasattr(qtbot, "app") else __import__("PySide6.QtWidgets", fromlist=["x"]).QApplication.instance(),
-                       tmp_paths, loaded, CredentialStore(tmp_paths, backend=MemoryBackend()), hist, hotkeys=hk, audio=audio,
-                       injector=inj, capture_context=lambda hwnd: ctx or FocusContext(hwnd=hwnd, process="notepad"),
-                       foreground=lambda: 42, enable_tray=False)
+        c = Controller(
+            qtbot.app
+            if hasattr(qtbot, "app")
+            else __import__("PySide6.QtWidgets", fromlist=["x"]).QApplication.instance(),
+            tmp_paths,
+            loaded,
+            CredentialStore(tmp_paths, backend=MemoryBackend()),
+            hist,
+            hotkeys=hk,
+            audio=audio,
+            injector=inj,
+            capture_context=lambda hwnd: ctx or FocusContext(hwnd=hwnd, process="notepad"),
+            foreground=lambda: 42,
+            enable_tray=False,
+        )
         prov = provider or FakeProvider("ai", "Polished text.")
         stt = SttChain([("fake", lambda: FakeSTT("fake", text))])
-        c.pipeline = Pipeline(stt, ProviderChain(c.settings.llm, lambda r: None, factory=lambda n, cfg, s: prov), lambda: c.settings)
+        c.pipeline = Pipeline(
+            stt,
+            ProviderChain(c.settings.llm, lambda r: None, factory=lambda n, cfg, s: prov),
+            lambda: c.settings,
+        )
         monkeypatch.setattr(c, "_warm_up", lambda: None)
         c.start()
         made.append(c)
@@ -216,8 +246,17 @@ def test_always_listening_segment_is_processed(qtbot, make):
     c, hk, audio, inj, _ = make()
     c.set_always_listening(True)
     assert c.overlay.state is OverlayState.ALWAYS_LISTENING and c._vad is not None
-    c._vad = type("V", (), {"process": lambda self, f: [VadEvent(VadEventKind.SPEECH_START), VadEvent(
-        VadEventKind.SPEECH_END, make_clip(1.0).samples)], "reset": lambda self: None})()
+    c._vad = type(
+        "V",
+        (),
+        {
+            "process": lambda self, f: [
+                VadEvent(VadEventKind.SPEECH_START),
+                VadEvent(VadEventKind.SPEECH_END, make_clip(1.0).samples),
+            ],
+            "reset": lambda self: None,
+        },
+    )()
     with qtbot.waitSignal(c.dictated, timeout=5000):
         c._on_frame(np.zeros(480, dtype="float32"))
     assert inj.inserted

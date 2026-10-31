@@ -66,7 +66,9 @@ def focused_hwnd(hwnd: int) -> tuple[int, int]:
 def basic_context(hwnd: int) -> tuple[FocusContext, int]:
     focus, pid = focused_hwnd(hwnd)
     ctx = FocusContext(
-        hwnd=hwnd, process=win32.process_image_name(pid), window_title=win32.window_text(hwnd),
+        hwnd=hwnd,
+        process=win32.process_image_name(pid),
+        window_title=win32.window_text(hwnd),
         control_class=win32.class_name(focus),
         is_elevated_target=is_process_elevated(pid) and not self_elevated(),
     )
@@ -75,8 +77,9 @@ def basic_context(hwnd: int) -> tuple[FocusContext, int]:
 
 def _send_message(hwnd: int, msg: int, wparam: int = 0, lparam: int = 0, timeout_ms: int = 200) -> int | None:
     result = ctypes.c_size_t(0)
-    ok = win32.user32().SendMessageTimeoutW(hwnd, msg, wparam, lparam, win32.SMTO_ABORTIFHUNG, timeout_ms,
-                                            ctypes.byref(result))
+    ok = win32.user32().SendMessageTimeoutW(
+        hwnd, msg, wparam, lparam, win32.SMTO_ABORTIFHUNG, timeout_ms, ctypes.byref(result)
+    )
     return int(result.value) if ok else None
 
 
@@ -92,7 +95,7 @@ def classic_edit_before_caret(focus_hwnd: int) -> tuple[str, str]:
     if _send_message(focus_hwnd, win32.EM_GETSEL, ctypes.addressof(start), ctypes.addressof(end)) is None:
         return "", ""
     text = buf.value
-    return text[max(0, start.value - MAX_BEFORE):start.value], text[start.value:end.value][:MAX_SELECTION]
+    return text[max(0, start.value - MAX_BEFORE) : start.value], text[start.value : end.value][:MAX_SELECTION]
 
 
 # ---------------------------------------------------------------- UI Automation worker
@@ -128,8 +131,9 @@ class _UiaWorker:
             from comtypes.gen import UIAutomationClient as uia_mod
 
             self.uia_mod = uia_mod
-            self.uia = comtypes.client.CreateObject("{ff48dba4-60ef-4201-aa87-54103eef594e}",
-                                                    interface=uia_mod.IUIAutomation)
+            self.uia = comtypes.client.CreateObject(
+                "{ff48dba4-60ef-4201-aa87-54103eef594e}", interface=uia_mod.IUIAutomation
+            )
             self.ok = True
         except Exception as exc:
             log.info("UI Automation unavailable: %s", exc)
@@ -226,9 +230,16 @@ def capture(hwnd: int, *, want_selection: bool = True, timeout_s: float = 0.3) -
             selection = ""
     if password or ctx.control_class.lower() == "edit" and _has_password_style(focus):
         password = True
-    return FocusContext(hwnd=ctx.hwnd, process=ctx.process, window_title=ctx.window_title,
-                        control_class=ctx.control_class, selection=selection, text_before_cursor=before,
-                        is_password=password, is_elevated_target=ctx.is_elevated_target)
+    return FocusContext(
+        hwnd=ctx.hwnd,
+        process=ctx.process,
+        window_title=ctx.window_title,
+        control_class=ctx.control_class,
+        selection=selection,
+        text_before_cursor=before,
+        is_password=password,
+        is_elevated_target=ctx.is_elevated_target,
+    )
 
 
 def _has_password_style(hwnd: int) -> bool:

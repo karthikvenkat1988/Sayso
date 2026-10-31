@@ -10,9 +10,13 @@ def test_defaults_report_unknown(settings, tmp_paths):
 
 
 def test_probes_are_injected(settings, tmp_paths):
-    p = Probes(microphone=lambda: ("blocked", "denied"), elevated=lambda: True,
-               stt_engines=lambda: {"faster_whisper": ("ok", "")}, providers=lambda: {"anthropic": ("blocked", "403")},
-               reach=lambda url: ("ok", "HTTP 200"))
+    p = Probes(
+        microphone=lambda: ("blocked", "denied"),
+        elevated=lambda: True,
+        stt_engines=lambda: {"faster_whisper": ("ok", "")},
+        providers=lambda: {"anthropic": ("blocked", "403")},
+        reach=lambda url: ("ok", "HTTP 200"),
+    )
     r = probe(settings, tmp_paths, probes=p)
     assert r.microphone == ("blocked", "denied") and r.elevated
     assert r.stt_engines["faster_whisper"][0] == "ok" and r.providers["anthropic"] == ("blocked", "403")

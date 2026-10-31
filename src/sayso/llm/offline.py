@@ -21,8 +21,16 @@ class OfflineRewriter(LLMProvider):
     name = "offline"
     is_cloud = False
 
-    def rewrite(self, transcript: str, mode: Mode, ctx: PromptContext, *, share_context: bool = False,
-                timeout: float = 0, on_delta: DeltaCallback | None = None) -> RewriteResult:
+    def rewrite(
+        self,
+        transcript: str,
+        mode: Mode,
+        ctx: PromptContext,
+        *,
+        share_context: bool = False,
+        timeout: float = 0,
+        on_delta: DeltaCallback | None = None,
+    ) -> RewriteResult:
         text = self.apply(transcript, mode)
         if on_delta:
             on_delta(text)

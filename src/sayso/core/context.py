@@ -38,15 +38,21 @@ def _match(names: list[str], process: str) -> bool:
     return any(n.lower().removesuffix(".exe") == p for n in names)
 
 
-def resolve(settings: Settings, ctx: FocusContext, override: Mode | None = None, command: bool = False) -> Resolved:
+def resolve(
+    settings: Settings, ctx: FocusContext, override: Mode | None = None, command: bool = False
+) -> Resolved:
     if ctx.is_password:
         return Resolved(Mode.RAW_TRANSCRIPT, "", False, True, "password field")
     if _match(settings.privacy.blocked_apps, ctx.process):
         return Resolved(Mode.RAW_TRANSCRIPT, "", False, True, f"{ctx.process} is blocked")
-    allow_cloud = not settings.privacy.offline_only and not _match(settings.privacy.no_cloud_apps, ctx.process)
+    allow_cloud = not settings.privacy.offline_only and not _match(
+        settings.privacy.no_cloud_apps, ctx.process
+    )
     profile = next((p for p in settings.profiles if _match(p.processes, ctx.process)), None)
     if command:
         mode = Mode.COMMAND
     else:
-        mode = override or (profile.mode if profile and profile.mode else None) or settings.general.default_mode
+        mode = (
+            override or (profile.mode if profile and profile.mode else None) or settings.general.default_mode
+        )
     return Resolved(mode, profile.tone if profile else "", allow_cloud, False)

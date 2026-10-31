@@ -21,7 +21,9 @@ VK_L = ord("L")
 
 def machine(ptt="ctrl+alt+space", toggle="capslock*2", always="ctrl+alt+l", command="shift", tap=350):
     p = lambda s: Chord.parse(s) if s else None  # noqa: E731
-    return HotkeyStateMachine(p(ptt), p(toggle), p(always), vk_for_name(command) if command else None, VK_ESCAPE, tap)
+    return HotkeyStateMachine(
+        p(ptt), p(toggle), p(always), vk_for_name(command) if command else None, VK_ESCAPE, tap
+    )
 
 
 class Keys:
@@ -38,6 +40,7 @@ class Keys:
 
 
 # ---- parsing
+
 
 def test_parse_chords():
     c = Chord.parse("Ctrl+Alt+Space")
@@ -67,6 +70,7 @@ def test_generic_modifier_matches_left_or_right():
 
 
 # ---- push to talk
+
 
 def test_ptt_start_stop_and_space_swallowed():
     k = Keys(machine())
@@ -117,6 +121,7 @@ def test_command_modifier_with_ptt_and_while_recording():
 
 # ---- toggle and double tap
 
+
 def test_chord_toggle():
     k = Keys(machine(ptt=None, toggle="f9", always=None))
     assert k.down(0x78).actions == [Action.START_TOGGLE]
@@ -160,6 +165,7 @@ def test_slow_second_tap_is_a_new_first_tap():
 
 
 # ---- cancel, always, injected, repeat
+
 
 def test_escape_cancels_recording_and_processing_but_is_not_swallowed():
     k = Keys(machine())

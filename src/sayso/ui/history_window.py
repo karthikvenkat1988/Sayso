@@ -40,8 +40,10 @@ class _Card(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 2, 4, 2)
         lay.setSpacing(3)
-        meta = QLabel(f"{_when(item.created)}  ·  {item.app or 'unknown app'}  ·  {item.mode.replace('_mode', '').replace('_', ' ')}"
-                      f"  ·  {item.latency_ms / 1000:.1f} s")
+        meta = QLabel(
+            f"{_when(item.created)}  ·  {item.app or 'unknown app'}  ·  {item.mode.replace('_mode', '').replace('_', ' ')}"
+            f"  ·  {item.latency_ms / 1000:.1f} s"
+        )
         theme.set_prop(meta, "muted")
         body = QLabel("\n".join(item.text.splitlines()[:2]) or "(empty)")
         body.setWordWrap(True)
@@ -108,8 +110,13 @@ class HistoryWindow(QWidget):
             row.setData(Qt.ItemDataRole.UserRole, it.id)
             self.list.addItem(row)
             self.list.setItemWidget(row, card)
-        note = "History is off." if not self.history.enabled else \
-            f"Kept for {self._retention()} days on this computer." if self._retention() > 0 else "Kept until you clear it."
+        note = (
+            "History is off."
+            if not self.history.enabled
+            else f"Kept for {self._retention()} days on this computer."
+            if self._retention() > 0
+            else "Kept until you clear it."
+        )
         self.footer.setText(f"{len(self._items)} dictations · {note}")
         self._sync_buttons()
 
@@ -132,13 +139,21 @@ class HistoryWindow(QWidget):
         self._with_item(lambda i: QGuiApplication.clipboard().setText(i.text))
 
     def _show_transcript(self) -> None:
-        self._with_item(lambda i: QMessageBox.information(
-            self, "What you said", f"{i.transcript}\n\nSpeech engine: {i.stt_engine}\nWriter: {i.llm_provider}"))
+        self._with_item(
+            lambda i: QMessageBox.information(
+                self,
+                "What you said",
+                f"{i.transcript}\n\nSpeech engine: {i.stt_engine}\nWriter: {i.llm_provider}",
+            )
+        )
 
     def _delete(self) -> None:
         self._with_item(lambda i: (self.history.delete(i.id), self.refresh()))
 
     def _clear(self) -> None:
-        if QMessageBox.question(self, "Clear history", "Delete all saved dictations?") == QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(self, "Clear history", "Delete all saved dictations?")
+            == QMessageBox.StandardButton.Yes
+        ):
             self.history.clear()
             self.refresh()

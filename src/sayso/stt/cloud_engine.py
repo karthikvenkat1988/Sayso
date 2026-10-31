@@ -35,8 +35,9 @@ class CloudWhisperEngine(STTEngine):
         if prompt:
             data["prompt"] = prompt
         try:
-            r = self._client.post(url, headers=headers, data=data,
-                                  files={"file": ("speech.wav", clip.wav_bytes(), "audio/wav")})
+            r = self._client.post(
+                url, headers=headers, data=data, files={"file": ("speech.wav", clip.wav_bytes(), "audio/wav")}
+            )
         except httpx.ConnectError as exc:
             raise EngineUnavailable("cloud STT unreachable") from exc
         if r.status_code in (401, 403):

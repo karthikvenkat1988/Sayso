@@ -35,8 +35,15 @@ def frame_db(frame: np.ndarray) -> float:
 
 
 class EnergyVad:
-    def __init__(self, sample_rate: int = 16000, frame_ms: int = 30, threshold_db: float = -42.0,
-                 start_frames: int = 2, end_ms: int = 700, pre_roll_ms: int = 300):
+    def __init__(
+        self,
+        sample_rate: int = 16000,
+        frame_ms: int = 30,
+        threshold_db: float = -42.0,
+        start_frames: int = 2,
+        end_ms: int = 700,
+        pre_roll_ms: int = 300,
+    ):
         self.sample_rate = sample_rate
         self.frame_ms = frame_ms
         self.threshold_db = threshold_db

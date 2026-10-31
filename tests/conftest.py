@@ -35,7 +35,9 @@ def tmp_paths(tmp_path: Path) -> AppPaths:
     return AppPaths(tmp_path / "config", tmp_path / "data", tmp_path / "policy.json", portable=True).ensure()
 
 
-def make_clip(seconds: float = 1.0, amplitude: float = 0.3, freq: float = 220.0, sr: int = 16000) -> AudioClip:
+def make_clip(
+    seconds: float = 1.0, amplitude: float = 0.3, freq: float = 220.0, sr: int = 16000
+) -> AudioClip:
     t = np.arange(int(seconds * sr)) / sr
     return AudioClip((amplitude * np.sin(2 * np.pi * freq * t)).astype("float32"), sr)
 
@@ -51,8 +53,14 @@ def silence_clip() -> AudioClip:
 
 
 class FakeSTT(STTEngine):
-    def __init__(self, name: str = "fake", text: str = "hello world", fail: Exception | None = None,
-                 load_error: str | None = None, confidence: float | None = 0.9):
+    def __init__(
+        self,
+        name: str = "fake",
+        text: str = "hello world",
+        fail: Exception | None = None,
+        load_error: str | None = None,
+        confidence: float | None = 0.9,
+    ):
         self.name = name
         self.text = text
         self.fail = fail
@@ -74,8 +82,14 @@ class FakeSTT(STTEngine):
 
 
 class FakeProvider(LLMProvider):
-    def __init__(self, name: str = "fake", text: str = "Rewritten.", cloud: bool = True,
-                 error: Exception | None = None, refused: bool = False):
+    def __init__(
+        self,
+        name: str = "fake",
+        text: str = "Rewritten.",
+        cloud: bool = True,
+        error: Exception | None = None,
+        refused: bool = False,
+    ):
         self.name = name
         self.is_cloud = cloud
         self.text = text

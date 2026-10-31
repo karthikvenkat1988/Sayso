@@ -10,7 +10,13 @@ from sayso.winsys import win32
 
 log = logging.getLogger(__name__)
 
-_SKIP_FORMATS = {2, 3, 9, 14, 0x80}  # CF_BITMAP, METAFILEPICT, PALETTE, ENHMETAFILE, OWNERDISPLAY (not HGLOBAL)
+_SKIP_FORMATS = {
+    2,
+    3,
+    9,
+    14,
+    0x80,
+}  # CF_BITMAP, METAFILEPICT, PALETTE, ENHMETAFILE, OWNERDISPLAY (not HGLOBAL)
 
 
 class ClipboardBusy(Exception):
@@ -81,7 +87,9 @@ def set_text(text: str, *, exclude_from_history: bool = True) -> None:
         u.SetClipboardData(win32.CF_UNICODETEXT, win32.global_alloc(data))
         if exclude_from_history:
             zero = (0).to_bytes(4, "little")
-            u.SetClipboardData(_register("ExcludeClipboardContentFromMonitorProcessing"), win32.global_alloc(zero))
+            u.SetClipboardData(
+                _register("ExcludeClipboardContentFromMonitorProcessing"), win32.global_alloc(zero)
+            )
             u.SetClipboardData(_register("CanIncludeInClipboardHistory"), win32.global_alloc(zero))
             u.SetClipboardData(_register("CanUploadToCloudClipboard"), win32.global_alloc(zero))
 

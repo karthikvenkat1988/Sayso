@@ -178,7 +178,9 @@ class HotkeyService(QObject):
                 self.started.emit("ptt", command)
             elif a is Action.START_TOGGLE:
                 self.started.emit("toggle", command)
-            elif a is Action.COMMAND_ON and not (Action.START_PTT in actions or Action.START_TOGGLE in actions):
+            elif a is Action.COMMAND_ON and not (
+                Action.START_PTT in actions or Action.START_TOGGLE in actions
+            ):
                 self.command_engaged.emit()
             elif a is Action.STOP:
                 self._release_alt_safely()
@@ -229,7 +231,11 @@ class HotkeyService(QObject):
         if tog is not None and tog.double_tap:
             log.info("double-tap cannot be registered; using ctrl+alt+space as the toggle")
             tog = Chord.parse("ctrl+alt+space")
-        always = _parse(self._settings.always_listening, "always-listening") if a.always_listening_allowed else None
+        always = (
+            _parse(self._settings.always_listening, "always-listening")
+            if a.always_listening_allowed
+            else None
+        )
         specs = [(1, ptt), (2, tog), (3, always)]
         ok = False
         seen: set[tuple[int, int]] = set()
@@ -272,5 +278,3 @@ def _to_registerhotkey(chord: Chord) -> tuple[int, int | None]:
         elif k not in MODIFIER_VKS:
             key = k
     return mods, key
-
-

@@ -53,18 +53,34 @@ LRESULT = ctypes.c_ssize_t
 
 
 class KBDLLHOOKSTRUCT(ctypes.Structure):
-    _fields_ = [("vkCode", wt.DWORD), ("scanCode", wt.DWORD), ("flags", wt.DWORD), ("time", wt.DWORD),
-                ("dwExtraInfo", ULONG_PTR)]
+    _fields_ = [
+        ("vkCode", wt.DWORD),
+        ("scanCode", wt.DWORD),
+        ("flags", wt.DWORD),
+        ("time", wt.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
 
 
 class KEYBDINPUT(ctypes.Structure):
-    _fields_ = [("wVk", wt.WORD), ("wScan", wt.WORD), ("dwFlags", wt.DWORD), ("time", wt.DWORD),
-                ("dwExtraInfo", ULONG_PTR)]
+    _fields_ = [
+        ("wVk", wt.WORD),
+        ("wScan", wt.WORD),
+        ("dwFlags", wt.DWORD),
+        ("time", wt.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
 
 
 class MOUSEINPUT(ctypes.Structure):
-    _fields_ = [("dx", wt.LONG), ("dy", wt.LONG), ("mouseData", wt.DWORD), ("dwFlags", wt.DWORD),
-                ("time", wt.DWORD), ("dwExtraInfo", ULONG_PTR)]
+    _fields_ = [
+        ("dx", wt.LONG),
+        ("dy", wt.LONG),
+        ("mouseData", wt.DWORD),
+        ("dwFlags", wt.DWORD),
+        ("time", wt.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
 
 
 class HARDWAREINPUT(ctypes.Structure):
@@ -82,14 +98,28 @@ class INPUT(ctypes.Structure):
 
 
 class GUITHREADINFO(ctypes.Structure):
-    _fields_ = [("cbSize", wt.DWORD), ("flags", wt.DWORD), ("hwndActive", wt.HWND), ("hwndFocus", wt.HWND),
-                ("hwndCapture", wt.HWND), ("hwndMenuOwner", wt.HWND), ("hwndMoveSize", wt.HWND),
-                ("hwndCaret", wt.HWND), ("rcCaret", wt.RECT)]
+    _fields_ = [
+        ("cbSize", wt.DWORD),
+        ("flags", wt.DWORD),
+        ("hwndActive", wt.HWND),
+        ("hwndFocus", wt.HWND),
+        ("hwndCapture", wt.HWND),
+        ("hwndMenuOwner", wt.HWND),
+        ("hwndMoveSize", wt.HWND),
+        ("hwndCaret", wt.HWND),
+        ("rcCaret", wt.RECT),
+    ]
 
 
 class MSG(ctypes.Structure):
-    _fields_ = [("hwnd", wt.HWND), ("message", wt.UINT), ("wParam", wt.WPARAM), ("lParam", wt.LPARAM),
-                ("time", wt.DWORD), ("pt", wt.POINT)]
+    _fields_ = [
+        ("hwnd", wt.HWND),
+        ("message", wt.UINT),
+        ("wParam", wt.WPARAM),
+        ("lParam", wt.LPARAM),
+        ("time", wt.DWORD),
+        ("pt", wt.POINT),
+    ]
 
 
 class LASTINPUTINFO(ctypes.Structure):
@@ -101,11 +131,20 @@ class DATA_BLOB(ctypes.Structure):
 
 
 class CREDENTIALW(ctypes.Structure):
-    _fields_ = [("Flags", wt.DWORD), ("Type", wt.DWORD), ("TargetName", wt.LPWSTR), ("Comment", wt.LPWSTR),
-                ("LastWritten", wt.FILETIME), ("CredentialBlobSize", wt.DWORD),
-                ("CredentialBlob", ctypes.POINTER(ctypes.c_ubyte)), ("Persist", wt.DWORD),
-                ("AttributeCount", wt.DWORD), ("Attributes", ctypes.c_void_p), ("TargetAlias", wt.LPWSTR),
-                ("UserName", wt.LPWSTR)]
+    _fields_ = [
+        ("Flags", wt.DWORD),
+        ("Type", wt.DWORD),
+        ("TargetName", wt.LPWSTR),
+        ("Comment", wt.LPWSTR),
+        ("LastWritten", wt.FILETIME),
+        ("CredentialBlobSize", wt.DWORD),
+        ("CredentialBlob", ctypes.POINTER(ctypes.c_ubyte)),
+        ("Persist", wt.DWORD),
+        ("AttributeCount", wt.DWORD),
+        ("Attributes", ctypes.c_void_p),
+        ("TargetAlias", wt.LPWSTR),
+        ("UserName", wt.LPWSTR),
+    ]
 
 
 class TOKEN_ELEVATION_T(ctypes.Structure):
@@ -138,7 +177,10 @@ _SIGNATURES: dict[str, dict[str, tuple[object, list[object]]]] = {
         "GetClassNameW": (ctypes.c_int, [wt.HWND, wt.LPWSTR, ctypes.c_int]),
         "GetWindowThreadProcessId": (wt.DWORD, [wt.HWND, _P(wt.DWORD)]),
         "GetGUIThreadInfo": (wt.BOOL, [wt.DWORD, _P(GUITHREADINFO)]),
-        "SendMessageTimeoutW": (LRESULT, [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT, wt.UINT, _P(ctypes.c_size_t)]),
+        "SendMessageTimeoutW": (
+            LRESULT,
+            [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM, wt.UINT, wt.UINT, _P(ctypes.c_size_t)],
+        ),
         "OpenClipboard": (wt.BOOL, [wt.HWND]),
         "CloseClipboard": (wt.BOOL, []),
         "EmptyClipboard": (wt.BOOL, []),
@@ -180,10 +222,30 @@ _SIGNATURES: dict[str, dict[str, tuple[object, list[object]]]] = {
         "GetTokenInformation": (wt.BOOL, [wt.HANDLE, ctypes.c_int, ctypes.c_void_p, wt.DWORD, _P(wt.DWORD)]),
     },
     "crypt32": {
-        "CryptProtectData": (wt.BOOL, [_P(DATA_BLOB), wt.LPCWSTR, _P(DATA_BLOB), ctypes.c_void_p, ctypes.c_void_p,
-                                       wt.DWORD, _P(DATA_BLOB)]),
-        "CryptUnprotectData": (wt.BOOL, [_P(DATA_BLOB), ctypes.c_void_p, _P(DATA_BLOB), ctypes.c_void_p,
-                                         ctypes.c_void_p, wt.DWORD, _P(DATA_BLOB)]),
+        "CryptProtectData": (
+            wt.BOOL,
+            [
+                _P(DATA_BLOB),
+                wt.LPCWSTR,
+                _P(DATA_BLOB),
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                wt.DWORD,
+                _P(DATA_BLOB),
+            ],
+        ),
+        "CryptUnprotectData": (
+            wt.BOOL,
+            [
+                _P(DATA_BLOB),
+                ctypes.c_void_p,
+                _P(DATA_BLOB),
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                wt.DWORD,
+                _P(DATA_BLOB),
+            ],
+        ),
     },
     "dwmapi": {
         "DwmSetWindowAttribute": (ctypes.c_long, [wt.HWND, wt.DWORD, ctypes.c_void_p, wt.DWORD]),
@@ -230,6 +292,7 @@ def last_error() -> int:
 
 # ---------------------------------------------------------------- small helpers
 
+
 def send_key_events(events: list[tuple[int, bool]]) -> int:
     """Sends tagged virtual-key events; each item is (vk, is_key_up). Returns how many were accepted."""
     arr = (INPUT * len(events))()
@@ -244,7 +307,7 @@ def send_unicode(text: str) -> int:
     units = []
     raw = text.encode("utf-16-le")
     for i in range(0, len(raw), 2):
-        units.append(int.from_bytes(raw[i:i + 2], "little"))
+        units.append(int.from_bytes(raw[i : i + 2], "little"))
     arr = (INPUT * (len(units) * 2))()
     for i, u in enumerate(units):
         for j, flags in enumerate((KEYEVENTF_UNICODE, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP)):
@@ -304,7 +367,9 @@ def process_elevated(pid: int) -> bool | None:
             return None
         try:
             info, ret = TOKEN_ELEVATION_T(), wt.DWORD()
-            if not a.GetTokenInformation(token, TOKEN_ELEVATION, ctypes.byref(info), ctypes.sizeof(info), ctypes.byref(ret)):
+            if not a.GetTokenInformation(
+                token, TOKEN_ELEVATION, ctypes.byref(info), ctypes.sizeof(info), ctypes.byref(ret)
+            ):
                 return None
             return bool(info.TokenIsElevated)
         finally:
@@ -352,7 +417,9 @@ def dpapi_protect(data: bytes, entropy: bytes) -> bytes:
     src, keep1 = _blob(data)
     ent, keep2 = _blob(entropy)
     out = DATA_BLOB()
-    if not crypt32().CryptProtectData(ctypes.byref(src), None, ctypes.byref(ent), None, None, 0, ctypes.byref(out)):
+    if not crypt32().CryptProtectData(
+        ctypes.byref(src), None, ctypes.byref(ent), None, None, 0, ctypes.byref(out)
+    ):
         raise OSError(f"CryptProtectData failed ({last_error()})")
     del keep1, keep2
     return _take_blob(out)
@@ -362,7 +429,9 @@ def dpapi_unprotect(data: bytes, entropy: bytes) -> bytes:
     src, keep1 = _blob(data)
     ent, keep2 = _blob(entropy)
     out = DATA_BLOB()
-    if not crypt32().CryptUnprotectData(ctypes.byref(src), None, ctypes.byref(ent), None, None, 0, ctypes.byref(out)):
+    if not crypt32().CryptUnprotectData(
+        ctypes.byref(src), None, ctypes.byref(ent), None, None, 0, ctypes.byref(out)
+    ):
         raise OSError(f"CryptUnprotectData failed ({last_error()})")
     del keep1, keep2
     return _take_blob(out)

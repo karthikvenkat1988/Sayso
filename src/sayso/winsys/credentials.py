@@ -61,8 +61,12 @@ class CredManBackend(_Backend):
 class DpapiBackend(_Backend):
     name = "dpapi"
 
-    def __init__(self, path: Path, protect: Callable[[bytes, bytes], bytes] | None = None,
-                 unprotect: Callable[[bytes, bytes], bytes] | None = None):
+    def __init__(
+        self,
+        path: Path,
+        protect: Callable[[bytes, bytes], bytes] | None = None,
+        unprotect: Callable[[bytes, bytes], bytes] | None = None,
+    ):
         self.path = path
         self._protect = protect or win32.dpapi_protect
         self._unprotect = unprotect or win32.dpapi_unprotect

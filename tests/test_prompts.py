@@ -16,7 +16,9 @@ def test_tags_escaped():
 
 
 def test_context_omitted_when_not_shared():
-    ctx = PromptContext(app="OUTLOOK", window_title="Secret deal", text_before_cursor="Dear Bob,", tone="Business")
+    ctx = PromptContext(
+        app="OUTLOOK", window_title="Secret deal", text_before_cursor="Dear Bob,", tone="Business"
+    )
     off = build_user_message("hi", Mode.EMAIL, ctx, False)
     assert "OUTLOOK" not in off and "Secret deal" not in off and "Dear Bob" not in off
     assert "<style>Business</style>" in off

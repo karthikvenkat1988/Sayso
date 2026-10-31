@@ -52,14 +52,33 @@ def test_warm_up_loads_first_working():
 
 def test_create_engine_cloud_blocked_offline(tmp_path):
     with pytest.raises(EngineUnavailable):
-        create_engine("cloud", SttSettings(), models_dir=tmp_path, app_dir=tmp_path, secrets=lambda r: "k", offline_only=True)
+        create_engine(
+            "cloud",
+            SttSettings(),
+            models_dir=tmp_path,
+            app_dir=tmp_path,
+            secrets=lambda r: "k",
+            offline_only=True,
+        )
     with pytest.raises(EngineUnavailable):
-        create_engine("mystery", SttSettings(), models_dir=tmp_path, app_dir=tmp_path, secrets=lambda r: None, offline_only=False)
+        create_engine(
+            "mystery",
+            SttSettings(),
+            models_dir=tmp_path,
+            app_dir=tmp_path,
+            secrets=lambda r: None,
+            offline_only=False,
+        )
 
 
 def test_from_settings_builds_in_order(tmp_path):
-    c = SttChain.from_settings(SttSettings(engines=["whisper_cpp", "windows_speech"]), models_dir=tmp_path, app_dir=tmp_path,
-                               secrets=lambda r: None, offline_only=True)
+    c = SttChain.from_settings(
+        SttSettings(engines=["whisper_cpp", "windows_speech"]),
+        models_dir=tmp_path,
+        app_dir=tmp_path,
+        secrets=lambda r: None,
+        offline_only=True,
+    )
     with pytest.raises(NoEngineAvailable) as ei:
         c.transcribe(make_clip(), language=None, prompt=None)
     assert [n for n, _ in ei.value.attempts] == ["whisper_cpp", "windows_speech"]

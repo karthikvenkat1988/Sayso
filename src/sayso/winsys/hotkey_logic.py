@@ -8,7 +8,15 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN = 0x10, 0x11, 0x12, 0x5B
-VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_RWIN = 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0x5C
+VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_RWIN = (
+    0xA0,
+    0xA1,
+    0xA2,
+    0xA3,
+    0xA4,
+    0xA5,
+    0x5C,
+)
 VK_SPACE, VK_CAPITAL, VK_ESCAPE = 0x20, 0x14, 0x1B
 
 # Generic modifier -> every raw VK that satisfies it.
@@ -21,20 +29,56 @@ _GENERIC = {
 MODIFIER_VKS = frozenset().union(*_GENERIC.values())
 
 _NAMES: dict[str, int] = {
-    "shift": VK_SHIFT, "lshift": VK_LSHIFT, "rshift": VK_RSHIFT,
-    "ctrl": VK_CONTROL, "control": VK_CONTROL, "lctrl": VK_LCONTROL, "rctrl": VK_RCONTROL,
-    "alt": VK_MENU, "lalt": VK_LMENU, "ralt": VK_RMENU,
-    "win": VK_LWIN, "super": VK_LWIN, "meta": VK_LWIN, "rwin": VK_RWIN,
-    "space": VK_SPACE, "capslock": VK_CAPITAL, "caps": VK_CAPITAL, "esc": VK_ESCAPE, "escape": VK_ESCAPE,
-    "tab": 0x09, "enter": 0x0D, "return": 0x0D, "backspace": 0x08, "insert": 0x2D, "delete": 0x2E,
-    "home": 0x24, "end": 0x23, "pageup": 0x21, "pagedown": 0x22,
-    "left": 0x25, "up": 0x26, "right": 0x27, "down": 0x28, "pause": 0x13, "scrolllock": 0x91,
+    "shift": VK_SHIFT,
+    "lshift": VK_LSHIFT,
+    "rshift": VK_RSHIFT,
+    "ctrl": VK_CONTROL,
+    "control": VK_CONTROL,
+    "lctrl": VK_LCONTROL,
+    "rctrl": VK_RCONTROL,
+    "alt": VK_MENU,
+    "lalt": VK_LMENU,
+    "ralt": VK_RMENU,
+    "win": VK_LWIN,
+    "super": VK_LWIN,
+    "meta": VK_LWIN,
+    "rwin": VK_RWIN,
+    "space": VK_SPACE,
+    "capslock": VK_CAPITAL,
+    "caps": VK_CAPITAL,
+    "esc": VK_ESCAPE,
+    "escape": VK_ESCAPE,
+    "tab": 0x09,
+    "enter": 0x0D,
+    "return": 0x0D,
+    "backspace": 0x08,
+    "insert": 0x2D,
+    "delete": 0x2E,
+    "home": 0x24,
+    "end": 0x23,
+    "pageup": 0x21,
+    "pagedown": 0x22,
+    "left": 0x25,
+    "up": 0x26,
+    "right": 0x27,
+    "down": 0x28,
+    "pause": 0x13,
+    "scrolllock": 0x91,
 }
 _NAMES.update({f"f{i}": 0x6F + i for i in range(1, 25)})
 _NAMES.update({c: ord(c.upper()) for c in "abcdefghijklmnopqrstuvwxyz0123456789"})
 _DISPLAY = {v: k for k, v in reversed(list(_NAMES.items()))}
-_DISPLAY.update({VK_SHIFT: "shift", VK_CONTROL: "ctrl", VK_MENU: "alt", VK_LWIN: "win", VK_SPACE: "space",
-                 VK_CAPITAL: "capslock", VK_ESCAPE: "esc"})
+_DISPLAY.update(
+    {
+        VK_SHIFT: "shift",
+        VK_CONTROL: "ctrl",
+        VK_MENU: "alt",
+        VK_LWIN: "win",
+        VK_SPACE: "space",
+        VK_CAPITAL: "capslock",
+        VK_ESCAPE: "esc",
+    }
+)
 
 
 def vk_for_name(name: str) -> int:
@@ -110,8 +154,15 @@ class Decision:
 
 
 class HotkeyStateMachine:
-    def __init__(self, ptt: Chord | None, toggle: Chord | None, always: Chord | None,
-                 command_modifier: int | None, cancel_vk: int, double_tap_ms: int):
+    def __init__(
+        self,
+        ptt: Chord | None,
+        toggle: Chord | None,
+        always: Chord | None,
+        command_modifier: int | None,
+        cancel_vk: int,
+        double_tap_ms: int,
+    ):
         self.ptt, self.toggle, self.always = ptt, toggle, always
         self.command_modifier = command_modifier
         self.cancel_vk = cancel_vk
@@ -186,12 +237,22 @@ class HotkeyStateMachine:
             self.force_idle()
             return
 
-        if self.command_modifier is not None and vk in _expand(self.command_modifier) and self.recording \
-                and not self._command and not (self._mode == "ptt" and self.ptt and self.ptt.contains(vk)):
+        if (
+            self.command_modifier is not None
+            and vk in _expand(self.command_modifier)
+            and self.recording
+            and not self._command
+            and not (self._mode == "ptt" and self.ptt and self.ptt.contains(vk))
+        ):
             self._command = True
             d.actions.append(Action.COMMAND_ON)
 
-        if self.always and not self.always.double_tap and self.always.contains(vk) and self.always.satisfied(self._pressed):
+        if (
+            self.always
+            and not self.always.double_tap
+            and self.always.contains(vk)
+            and self.always.satisfied(self._pressed)
+        ):
             d.actions.append(Action.TOGGLE_ALWAYS)
             self._swallow_trigger(vk, self.always, d)
             return
@@ -214,8 +275,11 @@ class HotkeyStateMachine:
         if self.ptt and not self.recording and self.ptt.contains(vk) and self.ptt.satisfied(self._pressed):
             self._mode = "ptt"
             d.actions.append(Action.START_PTT)
-            if self.command_modifier is not None and self._pressed & _expand(self.command_modifier) \
-                    and not self.ptt.contains(self.command_modifier):
+            if (
+                self.command_modifier is not None
+                and self._pressed & _expand(self.command_modifier)
+                and not self.ptt.contains(self.command_modifier)
+            ):
                 self._command = True
                 d.actions.append(Action.COMMAND_ON)
             self._swallow_trigger(vk, self.ptt, d)

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import re
 
-_FILLERS = re.compile(r"(?<![\w'])(?:um+|uh+|erm+|hmm+|uh-huh|you know,|i mean,)(?![\w'])[,]?\s*", re.IGNORECASE)
+_FILLERS = re.compile(
+    r"(?<![\w'])(?:um+|uh+|erm+|hmm+|uh-huh|you know,|i mean,)(?![\w'])[,]?\s*", re.IGNORECASE
+)
 _SPACE_BEFORE_PUNCT = re.compile(r"\s+([,.!?;:])")
 _MULTI_SPACE = re.compile(r"[ \t]{2,}")
 _REPEATS = re.compile(r"\b(\w+)(\s+\1\b)+", re.IGNORECASE)
@@ -33,6 +35,7 @@ def remove_fillers(text: str) -> str:
 
 def apply_scratch_that(text: str) -> str:
     """'Send it Monday scratch that Tuesday' -> 'Tuesday': drops the clause before the correction phrase."""
+
     def drop(m: re.Match[str]) -> str:
         lead = m.group(0)[: len(m.group(0)) - len(m.group(0).lstrip())]
         return lead if m.start() > 0 else ""
@@ -54,7 +57,12 @@ def apply_vocabulary(text: str, vocabulary: dict[str, str]) -> str:
         return text
     t = text
     for wrong in sorted(vocabulary, key=len, reverse=True):
-        t = re.sub(rf"(?<!\w){re.escape(wrong)}(?!\w)", vocabulary[wrong].replace("\\", "\\\\"), t, flags=re.IGNORECASE)
+        t = re.sub(
+            rf"(?<!\w){re.escape(wrong)}(?!\w)",
+            vocabulary[wrong].replace("\\", "\\\\"),
+            t,
+            flags=re.IGNORECASE,
+        )
     return t
 
 

@@ -55,8 +55,12 @@ class WhisperCppEngine(STTEngine):
             data["language"] = language
         if prompt:
             data["prompt"] = prompt
-        r = client.post(self.cfg.server_url.rstrip("/") + "/inference",
-                        files={"file": ("speech.wav", clip.wav_bytes(), "audio/wav")}, data=data, timeout=30)
+        r = client.post(
+            self.cfg.server_url.rstrip("/") + "/inference",
+            files={"file": ("speech.wav", clip.wav_bytes(), "audio/wav")},
+            data=data,
+            timeout=30,
+        )
         r.raise_for_status()
         return Transcript(r.json().get("text", "").strip(), self.name)
 
@@ -65,14 +69,27 @@ class WhisperCppEngine(STTEngine):
         try:
             with os.fdopen(fd, "wb") as f:
                 f.write(clip.wav_bytes())
-            cmd = [str(self._path(self.cfg.cli_path)), "-m", str(self._path(self.cfg.model_path)), "-f", wav,
-                   "-t", str(self.cfg.threads), "-nt", "-np", "-oj", "-of", wav[:-4]]
+            cmd = [
+                str(self._path(self.cfg.cli_path)),
+                "-m",
+                str(self._path(self.cfg.model_path)),
+                "-f",
+                wav,
+                "-t",
+                str(self.cfg.threads),
+                "-nt",
+                "-np",
+                "-oj",
+                "-of",
+                wav[:-4],
+            ]
             if language:
                 cmd += ["-l", language]
             if prompt:
                 cmd += ["--prompt", prompt]
-            proc = subprocess.run(cmd, capture_output=True, timeout=60,
-                                  creationflags=CREATE_NO_WINDOW if os.name == "nt" else 0)
+            proc = subprocess.run(
+                cmd, capture_output=True, timeout=60, creationflags=CREATE_NO_WINDOW if os.name == "nt" else 0
+            )
             if proc.returncode != 0:
                 raise EngineUnavailable(f"whisper.cpp exited with {proc.returncode}: {proc.stderr[-300:]!r}")
             out = Path(wav[:-4] + ".json")

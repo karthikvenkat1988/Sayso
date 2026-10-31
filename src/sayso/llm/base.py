@@ -30,8 +30,16 @@ class LLMProvider(abc.ABC):
     is_cloud: bool = True
 
     @abc.abstractmethod
-    def rewrite(self, transcript: str, mode: Mode, ctx: PromptContext, *, share_context: bool,
-                timeout: float, on_delta: DeltaCallback | None = None) -> RewriteResult:
+    def rewrite(
+        self,
+        transcript: str,
+        mode: Mode,
+        ctx: PromptContext,
+        *,
+        share_context: bool,
+        timeout: float,
+        on_delta: DeltaCallback | None = None,
+    ) -> RewriteResult:
         """Returns the rewritten text. Raises ProviderUnavailable or any transport error to fall through."""
 
     def health_check(self, timeout: float = 2.0) -> bool:

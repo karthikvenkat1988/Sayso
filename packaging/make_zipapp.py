@@ -22,7 +22,9 @@ def main() -> Path:
     out = dist / f"sayso-{__version__}.pyz"
     with tempfile.TemporaryDirectory() as tmp:
         stage = Path(tmp) / "app"
-        shutil.copytree(ROOT / "src" / "sayso", stage / "sayso", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        shutil.copytree(
+            ROOT / "src" / "sayso", stage / "sayso", ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
+        )
         assets = stage / "sayso" / "assets"
         shutil.copytree(ROOT / "assets", assets, ignore=shutil.ignore_patterns("*.ico"))
         zipapp.create_archive(stage, out, main="sayso.__main__:main", compressed=True)

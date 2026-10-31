@@ -58,8 +58,9 @@ class PasteMethod(InjectionMethod):
         except clipboard.ClipboardBusy as exc:
             raise InjectionFailed(str(exc)) from exc
         ours = clipboard.sequence_number()
-        sent = win32.send_key_events([(win32.VK_CONTROL, False), (win32.VK_V, False), (win32.VK_V, True),
-                                      (win32.VK_CONTROL, True)])
+        sent = win32.send_key_events(
+            [(win32.VK_CONTROL, False), (win32.VK_V, False), (win32.VK_V, True), (win32.VK_CONTROL, True)]
+        )
         if sent != 4:
             raise InjectionFailed("input was blocked")
         if snap is not None:
@@ -133,14 +134,22 @@ class KeyboardMethod(InjectionMethod):
 
 
 class Injector:
-    def __init__(self, settings: InjectionSettings, *, methods: dict[str, InjectionMethod] | None = None,
-                 prepare: Callable[[FocusContext], None] | None = None,
-                 clipboard_ok: Callable[[], bool] | None = None, uia_ok: Callable[[], bool] | None = None,
-                 remote: Callable[[], bool] | None = None):
+    def __init__(
+        self,
+        settings: InjectionSettings,
+        *,
+        methods: dict[str, InjectionMethod] | None = None,
+        prepare: Callable[[FocusContext], None] | None = None,
+        clipboard_ok: Callable[[], bool] | None = None,
+        uia_ok: Callable[[], bool] | None = None,
+        remote: Callable[[], bool] | None = None,
+    ):
         self.settings = settings
         self.methods = methods or {
-            "paste": PasteMethod(settings), "clipboard": ClipboardOnlyMethod(),
-            "accessibility": AccessibilityMethod(), "keyboard": KeyboardMethod(settings),
+            "paste": PasteMethod(settings),
+            "clipboard": ClipboardOnlyMethod(),
+            "accessibility": AccessibilityMethod(),
+            "keyboard": KeyboardMethod(settings),
         }
         self._prepare = prepare or _prepare_real
         self._clipboard_ok = clipboard_ok or clipboard.available
@@ -149,10 +158,16 @@ class Injector:
 
     def insert(self, text: str, ctx: FocusContext, *, replace_selection: bool = False) -> InsertReport:
         start = time.perf_counter()
-        target = TargetInfo(process=ctx.process, control_class=ctx.control_class, text_len=len(text),
-                            clipboard_ok=self._clipboard_ok(), uia_ok=self._uia_ok(),
-                            elevated_target=ctx.is_elevated_target, remote_session=self._remote(),
-                            replace_selection=replace_selection)
+        target = TargetInfo(
+            process=ctx.process,
+            control_class=ctx.control_class,
+            text_len=len(text),
+            clipboard_ok=self._clipboard_ok(),
+            uia_ok=self._uia_ok(),
+            elevated_target=ctx.is_elevated_target,
+            remote_session=self._remote(),
+            replace_selection=replace_selection,
+        )
         order = choose_methods(target, self.settings.method, self.settings.app_overrides)
         tried: list[tuple[str, str]] = []
         try:
@@ -169,7 +184,9 @@ class Injector:
                 continue
             ms = int((time.perf_counter() - start) * 1000)
             return InsertReport(name, True, ms, tried, needs_manual_paste=name == "clipboard")
-        return InsertReport("none", False, int((time.perf_counter() - start) * 1000), tried, needs_manual_paste=False)
+        return InsertReport(
+            "none", False, int((time.perf_counter() - start) * 1000), tried, needs_manual_paste=False
+        )
 
     def copy_selection(self) -> str | None:
         """Copies the current selection with Ctrl+C and puts the old clipboard back."""
@@ -177,8 +194,9 @@ class Injector:
             snap = clipboard.ClipboardSnapshot.take()
             clipboard.clear()
             before = clipboard.sequence_number()
-            win32.send_key_events([(win32.VK_CONTROL, False), (win32.VK_C, False), (win32.VK_C, True),
-                                   (win32.VK_CONTROL, True)])
+            win32.send_key_events(
+                [(win32.VK_CONTROL, False), (win32.VK_C, False), (win32.VK_C, True), (win32.VK_CONTROL, True)]
+            )
             deadline = time.monotonic() + 0.25
             while time.monotonic() < deadline and clipboard.sequence_number() == before:
                 time.sleep(0.01)

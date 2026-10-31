@@ -43,7 +43,9 @@ def render(size: int = 64, badge: str | None = None, grey: bool = False) -> QPix
         p.fillRect(pm.rect(), theme.qcolor(theme.MUTED, 0.75))
         p.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
     if badge:
-        color = {"recording": theme.DANGER, "offline": theme.TIDE, "error": theme.DANGER}.get(badge, theme.EMBER)
+        color = {"recording": theme.DANGER, "offline": theme.TIDE, "error": theme.DANGER}.get(
+            badge, theme.EMBER
+        )
         r = size * 0.34
         p.setBrush(QBrush(theme.qcolor(color)))
         p.setPen(theme.qcolor(theme.INK))

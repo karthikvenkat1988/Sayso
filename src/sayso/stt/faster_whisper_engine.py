@@ -34,12 +34,17 @@ class FasterWhisperEngine(STTEngine):
             source = self._resolve_model()
             try:
                 self._model = WhisperModel(
-                    source, device=self.cfg.device, compute_type=self.cfg.compute_type,
-                    cpu_threads=self.cfg.cpu_threads, download_root=str(self.models_dir),
+                    source,
+                    device=self.cfg.device,
+                    compute_type=self.cfg.compute_type,
+                    cpu_threads=self.cfg.cpu_threads,
+                    download_root=str(self.models_dir),
                     local_files_only=not self.allow_download,
                 )
             except Exception as exc:  # missing files, blocked download, bad model
-                raise EngineUnavailable(f"faster-whisper model '{self.cfg.model}' could not be loaded: {exc}") from exc
+                raise EngineUnavailable(
+                    f"faster-whisper model '{self.cfg.model}' could not be loaded: {exc}"
+                ) from exc
             log.info("faster-whisper loaded (%s, %s)", source, self.cfg.compute_type)
 
     def _resolve_model(self) -> str:
@@ -55,8 +60,12 @@ class FasterWhisperEngine(STTEngine):
         self.load()
         assert self._model is not None
         segments, info = self._model.transcribe(
-            clip.samples, language=language or None, beam_size=self.cfg.beam_size,
-            initial_prompt=prompt or None, vad_filter=True, condition_on_previous_text=False,
+            clip.samples,
+            language=language or None,
+            beam_size=self.cfg.beam_size,
+            initial_prompt=prompt or None,
+            vad_filter=True,
+            condition_on_previous_text=False,
             without_timestamps=True,
         )
         segs = list(segments)

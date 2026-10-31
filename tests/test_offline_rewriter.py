@@ -53,5 +53,7 @@ def test_meeting_notes_bullets():
 
 def test_provider_interface_streams_delta():
     seen: list[str] = []
-    r = OfflineRewriter().rewrite("hello", Mode.REWRITE_TEXT, PromptContext(), share_context=False, on_delta=seen.append)
+    r = OfflineRewriter().rewrite(
+        "hello", Mode.REWRITE_TEXT, PromptContext(), share_context=False, on_delta=seen.append
+    )
     assert r.provider == "offline" and seen == [r.text]

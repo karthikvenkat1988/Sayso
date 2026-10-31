@@ -22,7 +22,9 @@ def make_chain(providers: dict[str, FakeProvider], chain: list[str], **kw) -> Pr
 
 
 def run(chain, allow_cloud=True):
-    return chain.rewrite("hello there", Mode.CHAT, PromptContext(), share_context=False, allow_cloud=allow_cloud)
+    return chain.rewrite(
+        "hello there", Mode.CHAT, PromptContext(), share_context=False, allow_cloud=allow_cloud
+    )
 
 
 def test_order_and_first_success_wins():
@@ -87,7 +89,9 @@ def test_unconfigured_and_unavailable_in_status():
 
 def test_create_provider_kinds():
     assert create_provider("o", ProviderSettings(kind="offline"), lambda r: None).name == "offline"
-    ollama = create_provider("ollama", ProviderSettings(kind="ollama", base_url="http://127.0.0.1:11434/v1"), lambda r: None)
+    ollama = create_provider(
+        "ollama", ProviderSettings(kind="ollama", base_url="http://127.0.0.1:11434/v1"), lambda r: None
+    )
     assert not ollama.is_cloud
     try:
         create_provider("x", ProviderSettings(kind="mystery"), lambda r: None)

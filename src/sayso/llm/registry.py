@@ -28,12 +28,15 @@ def create_provider(name: str, cfg: ProviderSettings, secrets: SecretLookup) -> 
         return OfflineRewriter()
     if kind == "anthropic":
         from sayso.llm.anthropic_provider import AnthropicProvider
+
         return AnthropicProvider(name, cfg, key)
     if kind == "azure":
         from sayso.llm.openai_compatible import AzureOpenAIProvider
+
         return AzureOpenAIProvider(name, cfg, key)
     if kind in {"openai", "openrouter", "ollama", "lmstudio", "local", "custom"}:
         from sayso.llm.openai_compatible import OpenAICompatibleProvider
+
         return OpenAICompatibleProvider(name, cfg, key)
     for ep in entry_points(group="sayso.llm"):
         if ep.name == kind:
@@ -54,15 +57,23 @@ class ProviderChain:
 
     COOLDOWN_S = 60.0
 
-    def __init__(self, settings: LlmSettings, secrets: SecretLookup, *, offline_only: bool = False,
-                 factory: Callable[[str, ProviderSettings, SecretLookup], LLMProvider] = create_provider):
+    def __init__(
+        self,
+        settings: LlmSettings,
+        secrets: SecretLookup,
+        *,
+        offline_only: bool = False,
+        factory: Callable[[str, ProviderSettings, SecretLookup], LLMProvider] = create_provider,
+    ):
         self.settings = settings
         self.offline_only = offline_only
         self._providers: list[tuple[str, LLMProvider | None, str]] = []
         self._cooldown: dict[str, float] = {}
         names = list(dict.fromkeys([*settings.chain, "offline"]))
         for name in names:
-            cfg = settings.providers.get(name) or (ProviderSettings(kind="offline") if name == "offline" else None)
+            cfg = settings.providers.get(name) or (
+                ProviderSettings(kind="offline") if name == "offline" else None
+            )
             if cfg is None:
                 self._providers.append((name, None, "not configured"))
                 continue
@@ -75,8 +86,16 @@ class ProviderChain:
     def status(self) -> list[tuple[str, bool, str]]:
         return [(n, p is not None, why) for n, p, why in self._providers]
 
-    def rewrite(self, transcript: str, mode: Mode, ctx: PromptContext, *, share_context: bool, allow_cloud: bool,
-                on_delta: DeltaCallback | None = None) -> ChainOutcome:
+    def rewrite(
+        self,
+        transcript: str,
+        mode: Mode,
+        ctx: PromptContext,
+        *,
+        share_context: bool,
+        allow_cloud: bool,
+        on_delta: DeltaCallback | None = None,
+    ) -> ChainOutcome:
         start = time.perf_counter()
         attempts: list[tuple[str, str]] = []
         now = time.monotonic()
@@ -91,8 +110,14 @@ class ProviderChain:
                 attempts.append((name, "cooling down after failure"))
                 continue
             try:
-                result = provider.rewrite(transcript, mode, ctx, share_context=share_context,
-                                          timeout=self.settings.timeout_s, on_delta=on_delta)
+                result = provider.rewrite(
+                    transcript,
+                    mode,
+                    ctx,
+                    share_context=share_context,
+                    timeout=self.settings.timeout_s,
+                    on_delta=on_delta,
+                )
                 if result.refused or not result.text:
                     attempts.append((name, "declined" if result.refused else "empty"))
                     continue
@@ -106,7 +131,9 @@ class ProviderChain:
                 attempts.append((name, type(exc).__name__))
                 self._cooldown[name] = time.monotonic() + self.COOLDOWN_S
         # Unreachable in practice because offline is always last, kept as a guarantee.
-        return ChainOutcome(OfflineRewriter().rewrite(transcript, mode, ctx), attempts, time.perf_counter() - start)
+        return ChainOutcome(
+            OfflineRewriter().rewrite(transcript, mode, ctx), attempts, time.perf_counter() - start
+        )
 
     def close(self) -> None:
         for _, p, _ in self._providers:

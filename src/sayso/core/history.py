@@ -37,8 +37,18 @@ class History:
         self._db.commit()
         self.prune()
 
-    def add(self, *, app: str, mode: str, transcript: str, text: str, stt_engine: str, llm_provider: str,
-            latency_ms: int, confidence: float | None) -> int | None:
+    def add(
+        self,
+        *,
+        app: str,
+        mode: str,
+        transcript: str,
+        text: str,
+        stt_engine: str,
+        llm_provider: str,
+        latency_ms: int,
+        confidence: float | None,
+    ) -> int | None:
         if not self.enabled:
             return None
         with self._lock:

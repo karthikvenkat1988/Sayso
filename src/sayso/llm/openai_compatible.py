@@ -62,20 +62,31 @@ class OpenAICompatibleProvider(LLMProvider):
 
     # -- API
 
-    def rewrite(self, transcript: str, mode: Mode, ctx: PromptContext, *, share_context: bool,
-                timeout: float, on_delta: DeltaCallback | None = None) -> RewriteResult:
+    def rewrite(
+        self,
+        transcript: str,
+        mode: Mode,
+        ctx: PromptContext,
+        *,
+        share_context: bool,
+        timeout: float,
+        on_delta: DeltaCallback | None = None,
+    ) -> RewriteResult:
         user = build_user_message(transcript, mode, ctx, share_context)
         stream = on_delta is not None
         try:
             if not stream:
-                r = self._client.post(self._url(), headers=self._headers(), json=self._body(user, False), timeout=timeout)
+                r = self._client.post(
+                    self._url(), headers=self._headers(), json=self._body(user, False), timeout=timeout
+                )
                 self._raise_for(r)
                 text = r.json()["choices"][0]["message"]["content"] or ""
                 return RewriteResult(text.strip(), self.name, self.cfg.model)
 
             chunks: list[str] = []
-            with self._client.stream("POST", self._url(), headers=self._headers(), json=self._body(user, True),
-                                     timeout=timeout) as r:
+            with self._client.stream(
+                "POST", self._url(), headers=self._headers(), json=self._body(user, True), timeout=timeout
+            ) as r:
                 if r.status_code >= 400:
                     r.read()
                     self._raise_for(r)
@@ -106,7 +117,9 @@ class OpenAICompatibleProvider(LLMProvider):
 
     def health_check(self, timeout: float = 2.0) -> bool:
         try:
-            r = self._client.get(self.cfg.base_url.rstrip("/") + "/models", headers=self._headers(), timeout=timeout)
+            r = self._client.get(
+                self.cfg.base_url.rstrip("/") + "/models", headers=self._headers(), timeout=timeout
+            )
             return r.status_code < 500
         except httpx.HTTPError:
             return False

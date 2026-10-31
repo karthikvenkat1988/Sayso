@@ -35,8 +35,12 @@ HINTS = {
     OverlayState.ALWAYS_LISTENING: "Listening",
 }
 DOT_COLORS = {
-    OverlayState.RECORDING: theme.EMBER, OverlayState.HANDS_FREE: theme.EMBER, OverlayState.COMMAND: theme.EMBER,
-    OverlayState.PROCESSING: theme.TIDE, OverlayState.SUCCESS: theme.SUCCESS, OverlayState.ERROR: theme.DANGER,
+    OverlayState.RECORDING: theme.EMBER,
+    OverlayState.HANDS_FREE: theme.EMBER,
+    OverlayState.COMMAND: theme.EMBER,
+    OverlayState.PROCESSING: theme.TIDE,
+    OverlayState.SUCCESS: theme.SUCCESS,
+    OverlayState.ERROR: theme.DANGER,
     OverlayState.ALWAYS_LISTENING: theme.TIDE,
 }
 
@@ -106,9 +110,14 @@ class _ConfidenceRing(QWidget):
 
 class Overlay(QWidget):
     def __init__(self) -> None:
-        super().__init__(None, Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-                         | Qt.WindowType.Tool | Qt.WindowType.WindowDoesNotAcceptFocus
-                         | Qt.WindowType.WindowTransparentForInput)
+        super().__init__(
+            None,
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+            | Qt.WindowType.WindowDoesNotAcceptFocus
+            | Qt.WindowType.WindowTransparentForInput,
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
@@ -125,8 +134,10 @@ class Overlay(QWidget):
         self.text.setWordWrap(True)
         self.text.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         self.chip = QLabel("")
-        self.chip.setStyleSheet(f"color: {theme.MIST}; background: {theme.INK_2}; border: 1px solid {theme.BORDER};"
-                                "border-radius: 9px; padding: 1px 8px; font-size: 11px;")
+        self.chip.setStyleSheet(
+            f"color: {theme.MIST}; background: {theme.INK_2}; border: 1px solid {theme.BORDER};"
+            "border-radius: 9px; padding: 1px 8px; font-size: 11px;"
+        )
         self.chip.setFixedHeight(20)
         self.chip.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.ring = _ConfidenceRing()
@@ -169,19 +180,30 @@ class Overlay(QWidget):
             return
         pulse = state in {OverlayState.RECORDING, OverlayState.HANDS_FREE, OverlayState.COMMAND}
         self.dot.configure(DOT_COLORS[state], pulse, state is OverlayState.SUCCESS)
-        self.wave.set_mode(WaveMode.LIVE if pulse else WaveMode.THINKING if state in {
-            OverlayState.PROCESSING, OverlayState.ALWAYS_LISTENING} else WaveMode.IDLE)
+        self.wave.set_mode(
+            WaveMode.LIVE
+            if pulse
+            else WaveMode.THINKING
+            if state in {OverlayState.PROCESSING, OverlayState.ALWAYS_LISTENING}
+            else WaveMode.IDLE
+        )
         pill = state is OverlayState.ALWAYS_LISTENING
         self.wave.setVisible(not pill)
         self.ring.setVisible(not pill)
         self.latency.setVisible(not pill)
-        if state in {OverlayState.RECORDING, OverlayState.HANDS_FREE, OverlayState.COMMAND,
-                     OverlayState.ALWAYS_LISTENING}:
+        if state in {
+            OverlayState.RECORDING,
+            OverlayState.HANDS_FREE,
+            OverlayState.COMMAND,
+            OverlayState.ALWAYS_LISTENING,
+        }:
             self._preview = ""
             self.set_confidence(None)
             self.set_latency(None)
-        self._show_text(message or (self._preview if state is OverlayState.PROCESSING and self._preview
-                                    else HINTS.get(state, "")))
+        self._show_text(
+            message
+            or (self._preview if state is OverlayState.PROCESSING and self._preview else HINTS.get(state, ""))
+        )
         self._apply_size(pill)
         self._show_animated()
         if state is OverlayState.SUCCESS:
@@ -217,7 +239,7 @@ class Overlay(QWidget):
     # -- internals
 
     def _show_text(self, text: str) -> None:
-        shown = text if len(text) <= MAX_CHARS else "…" + text[-(MAX_CHARS - 1):]
+        shown = text if len(text) <= MAX_CHARS else "…" + text[-(MAX_CHARS - 1) :]
         self.text.setToolTip(text)
         self.text.setText(shown)
         self._wanted_lines = 2 if len(shown) > ONE_LINE_CHARS else 1
@@ -290,6 +312,8 @@ class Overlay(QWidget):
             hwnd = int(self.winId())
             u = win32.user32()
             style = u.GetWindowLongPtrW(hwnd, win32.GWL_EXSTYLE)
-            u.SetWindowLongPtrW(hwnd, win32.GWL_EXSTYLE, style | win32.WS_EX_NOACTIVATE | win32.WS_EX_TOOLWINDOW)
+            u.SetWindowLongPtrW(
+                hwnd, win32.GWL_EXSTYLE, style | win32.WS_EX_NOACTIVATE | win32.WS_EX_TOOLWINDOW
+            )
         except Exception:
             pass

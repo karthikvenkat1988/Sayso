@@ -12,7 +12,9 @@ from sayso.core.capabilities import Probes, Status
 from sayso.llm.registry import ProviderChain
 from sayso.stt.registry import SttChain
 
-MIC_CONSENT_KEY = r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged"
+MIC_CONSENT_KEY = (
+    r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged"
+)
 
 
 def mic_consent_denied() -> bool:
@@ -58,15 +60,24 @@ def keyboard_hook() -> Status:
 def uia() -> Status:
     from sayso.winsys import context
 
-    return ("ok", "") if context.uia_available() else ("missing", "UI Automation not available; basic context only")
+    return (
+        ("ok", "")
+        if context.uia_available()
+        else ("missing", "UI Automation not available; basic context only")
+    )
 
 
 def powershell() -> Status:
     if sys.platform != "win32":
         return ("unknown", "Windows only")
     try:
-        subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "exit 0"], timeout=5,
-                       capture_output=True, creationflags=0x08000000, check=True)
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "exit 0"],
+            timeout=5,
+            capture_output=True,
+            creationflags=0x08000000,
+            check=True,
+        )
         return ("ok", "")
     except (OSError, subprocess.SubprocessError) as exc:
         return ("blocked", f"Blocked by application control ({type(exc).__name__})")
@@ -84,7 +95,10 @@ def build_probes(stt: SttChain | None = None, llm: ProviderChain | None = None) 
     def stt_engines() -> dict[str, Status]:
         if stt is None:
             return {}
-        return {n: ("ok" if s == "ready" else "unknown" if s == "not loaded" else "blocked", s) for n, s in stt.status()}
+        return {
+            n: ("ok" if s == "ready" else "unknown" if s == "not loaded" else "blocked", s)
+            for n, s in stt.status()
+        }
 
     def providers() -> dict[str, Status]:
         if llm is None:
@@ -92,8 +106,17 @@ def build_probes(stt: SttChain | None = None, llm: ProviderChain | None = None) 
         return {n: ("ok", "") if ok else ("blocked", why) for n, ok, why in llm.status}
 
     reach: Callable[[str], Status] | None = None
-    return Probes(microphone=microphone, clipboard=clipboard_status, keyboard_hook=keyboard_hook, uia=uia,
-                  powershell=powershell, elevated=elevated, reach=reach, stt_engines=stt_engines, providers=providers)
+    return Probes(
+        microphone=microphone,
+        clipboard=clipboard_status,
+        keyboard_hook=keyboard_hook,
+        uia=uia,
+        powershell=powershell,
+        elevated=elevated,
+        reach=reach,
+        stt_engines=stt_engines,
+        providers=providers,
+    )
 
 
 def has_no_network_flag() -> bool:

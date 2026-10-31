@@ -16,7 +16,9 @@ from .conftest import make_clip
 @respx.mock
 def test_server_mode():
     respx.get("http://127.0.0.1:8178").mock(return_value=httpx.Response(200))
-    route = respx.post("http://127.0.0.1:8178/inference").mock(return_value=httpx.Response(200, json={"text": " hi there "}))
+    route = respx.post("http://127.0.0.1:8178/inference").mock(
+        return_value=httpx.Response(200, json={"text": " hi there "})
+    )
     eng = WhisperCppEngine(WhisperCppSettings(mode="server"), app_dir=__import__("pathlib").Path("."))
     eng.load()
     t = eng.transcribe(make_clip(), language="en", prompt="Sayso")

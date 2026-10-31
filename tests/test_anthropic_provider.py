@@ -71,8 +71,12 @@ class _ConnErr(Exception):
 
 @pytest.fixture
 def fake_sdk(monkeypatch):
-    mod = types.SimpleNamespace(Anthropic=_Client, AuthenticationError=_AuthErr, PermissionDeniedError=_AuthErr,
-                                APIConnectionError=_ConnErr)
+    mod = types.SimpleNamespace(
+        Anthropic=_Client,
+        AuthenticationError=_AuthErr,
+        PermissionDeniedError=_AuthErr,
+        APIConnectionError=_ConnErr,
+    )
     monkeypatch.setitem(sys.modules, "anthropic", mod)
     return mod
 
@@ -80,7 +84,9 @@ def fake_sdk(monkeypatch):
 def provider(**kw):
     from sayso.llm.anthropic_provider import AnthropicProvider
 
-    return AnthropicProvider("anthropic", ProviderSettings(kind="anthropic", model="claude-opus-5-5", effort="low", **kw), "key")
+    return AnthropicProvider(
+        "anthropic", ProviderSettings(kind="anthropic", model="claude-opus-5-5", effort="low", **kw), "key"
+    )
 
 
 def test_missing_key_unavailable(fake_sdk):
