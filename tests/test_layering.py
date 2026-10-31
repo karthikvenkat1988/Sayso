@@ -39,7 +39,7 @@ def test_only_ui_imports_qt():
             continue
         for mod in _imports(f):
             if mod.startswith("PySide6"):
-                offenders.append(f"{rel} imports {mod}")
+                offenders.append(f"{rel.as_posix()} imports {mod}")
     # winsys hotkeys/service wrappers are the declared exception (they emit Qt signals).
     offenders = [o for o in offenders if not o.startswith("winsys/hotkeys.py")]
     assert not offenders, offenders
