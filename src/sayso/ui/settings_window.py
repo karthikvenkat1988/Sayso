@@ -515,6 +515,7 @@ class SettingsWindow(QDialog):
     def _spin(lo: int, hi: int) -> QSpinBox:
         s = QSpinBox()
         s.setRange(lo, hi)
+        s.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
         return s
 
     def set_level(self, level: float) -> None:
@@ -599,6 +600,7 @@ class SettingsWindow(QDialog):
         w, lay = self._page("AI", "Sayso asks the checked providers in order. The built-in offline writer is always the last resort.")
         row = QHBoxLayout()
         self.chain_list = _OrderedList()
+        self.chain_list.setMinimumWidth(190)
         self.chain_list.set_items(self.loaded.settings.llm.chain, list(self._providers))
         self.chain_list.list.currentItemChanged.connect(lambda cur, prev: self._select_provider(cur))
         row.addWidget(self.chain_list, 1)

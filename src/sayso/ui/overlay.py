@@ -7,7 +7,7 @@ from enum import Enum
 
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QCursor, QGuiApplication, QPainter, QPen
-from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QLayout, QWidget
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QLayout, QSizePolicy, QWidget
 
 from sayso.ui import theme
 from sayso.ui.waveform import Waveform, WaveMode
@@ -127,9 +127,12 @@ class Overlay(QWidget):
         self.chip = QLabel("")
         self.chip.setStyleSheet(f"color: {theme.MIST}; background: {theme.INK_2}; border: 1px solid {theme.BORDER};"
                                 "border-radius: 9px; padding: 1px 8px; font-size: 11px;")
+        self.chip.setFixedHeight(20)
+        self.chip.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.ring = _ConfidenceRing()
         self.latency = QLabel("")
         self.latency.setStyleSheet(f"color: {theme.MUTED}; background: transparent; font-size: 11px;")
+        self.latency.setMinimumWidth(32)
 
         row = QHBoxLayout(self)
         row.setContentsMargins(16, 8, 16, 8)

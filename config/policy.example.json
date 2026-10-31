@@ -1,0 +1,11 @@
+{
+  "$comment": "Example corporate policy. Every key here is locked for users.",
+  "privacy": { "telemetry": false, "history_retention_days": 7, "no_cloud_apps": ["epic", "cerner"] },
+  "llm": {
+    "chain": ["azure", "offline"],
+    "providers": { "azure": { "base_url": "https://contoso-ai.openai.azure.com", "deployment": "gpt-4o-mini",
+                              "api_version": "2024-06-01", "api_key_ref": "llm.azure" } }
+  },
+  "stt": { "engines": ["faster_whisper", "windows_speech"] },
+  "activation": { "always_listening_allowed": false }
+}

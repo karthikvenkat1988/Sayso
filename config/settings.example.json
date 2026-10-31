@@ -1,0 +1,226 @@
+{
+  "general": {
+    "default_mode": "rewrite_text",
+    "show_overlay": true,
+    "overlay_position": "bottom",
+    "sounds": true,
+    "ui_language": "en"
+  },
+  "hotkeys": {
+    "push_to_talk": "ctrl+alt+space",
+    "toggle": "capslock*2",
+    "always_listening": "ctrl+alt+l",
+    "command_modifier": "shift",
+    "cancel": "esc",
+    "double_tap_ms": 350
+  },
+  "activation": {
+    "push_to_talk": true,
+    "toggle": true,
+    "always_listening_allowed": true
+  },
+  "audio": {
+    "device": null,
+    "sample_rate": 16000,
+    "vad_threshold_db": -42.0,
+    "end_of_speech_ms": 700,
+    "max_seconds": 300
+  },
+  "stt": {
+    "engines": [
+      "faster_whisper",
+      "whisper_cpp",
+      "windows_speech"
+    ],
+    "language": "en",
+    "faster_whisper": {
+      "model": "base.en",
+      "device": "cpu",
+      "compute_type": "int8",
+      "beam_size": 1,
+      "cpu_threads": 0
+    },
+    "whisper_cpp": {
+      "mode": "cli",
+      "server_url": "http://127.0.0.1:8178",
+      "cli_path": "bin/whisper-cli.exe",
+      "model_path": "models/ggml-base.en.bin",
+      "threads": 4
+    },
+    "windows_speech": {
+      "culture": "en-US"
+    },
+    "cloud": {
+      "base_url": "https://api.openai.com/v1",
+      "model": "whisper-1",
+      "api_key_ref": "stt.cloud",
+      "kind": "openai",
+      "api_version": "2024-06-01"
+    }
+  },
+  "llm": {
+    "chain": [
+      "anthropic",
+      "ollama",
+      "offline"
+    ],
+    "timeout_s": 6.0,
+    "providers": {
+      "anthropic": {
+        "kind": "anthropic",
+        "base_url": "",
+        "model": "claude-opus-5-5",
+        "api_key_ref": "llm.anthropic",
+        "api_version": "",
+        "deployment": "",
+        "effort": "low",
+        "extra_headers": {}
+      },
+      "openai": {
+        "kind": "openai",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-4o-mini",
+        "api_key_ref": "llm.openai",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "azure": {
+        "kind": "azure",
+        "base_url": "https://YOUR-RESOURCE.openai.azure.com",
+        "model": "",
+        "api_key_ref": "llm.azure",
+        "api_version": "2024-06-01",
+        "deployment": "gpt-4o-mini",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "openrouter": {
+        "kind": "openrouter",
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "anthropic/claude-sonnet-5.5",
+        "api_key_ref": "llm.openrouter",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "ollama": {
+        "kind": "ollama",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "model": "llama3.2:3b",
+        "api_key_ref": "",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "lmstudio": {
+        "kind": "lmstudio",
+        "base_url": "http://127.0.0.1:1234/v1",
+        "model": "local-model",
+        "api_key_ref": "",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "local": {
+        "kind": "local",
+        "base_url": "http://127.0.0.1:8080/v1",
+        "model": "local",
+        "api_key_ref": "",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      },
+      "offline": {
+        "kind": "offline",
+        "base_url": "",
+        "model": "",
+        "api_key_ref": "",
+        "api_version": "",
+        "deployment": "",
+        "effort": "",
+        "extra_headers": {}
+      }
+    }
+  },
+  "injection": {
+    "method": "auto",
+    "restore_clipboard": true,
+    "paste_settle_ms": 150,
+    "keyboard_chunk": 64,
+    "app_overrides": {}
+  },
+  "profiles": [
+    {
+      "processes": [
+        "OUTLOOK",
+        "olk"
+      ],
+      "mode": "email_mode",
+      "tone": "Business email."
+    },
+    {
+      "processes": [
+        "ms-teams",
+        "Teams",
+        "slack"
+      ],
+      "mode": "chat_mode",
+      "tone": "Workplace chat: brief and friendly."
+    },
+    {
+      "processes": [
+        "WINWORD",
+        "POWERPNT"
+      ],
+      "mode": "professional_mode",
+      "tone": "Clear document prose."
+    },
+    {
+      "processes": [
+        "ONENOTE"
+      ],
+      "mode": "meeting_notes_mode",
+      "tone": ""
+    },
+    {
+      "processes": [
+        "EXCEL"
+      ],
+      "mode": "professional_mode",
+      "tone": "Short spreadsheet comment."
+    },
+    {
+      "processes": [
+        "Code",
+        "devenv",
+        "WindowsTerminal",
+        "powershell",
+        "cmd"
+      ],
+      "mode": "rewrite_text",
+      "tone": "Technical. Keep identifiers, paths and commands verbatim."
+    }
+  ],
+  "privacy": {
+    "history_enabled": true,
+    "history_retention_days": 30,
+    "share_context": true,
+    "offline_only": false,
+    "telemetry": false,
+    "blocked_apps": [
+      "KeePass",
+      "KeePassXC",
+      "1Password",
+      "Bitwarden"
+    ],
+    "no_cloud_apps": []
+  },
+  "vocabulary": {},
+  "snippets": {}
+}

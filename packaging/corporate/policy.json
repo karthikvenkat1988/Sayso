@@ -1,0 +1,12 @@
+{
+  "$comment": "Baked into the corporate build next to Sayso.exe. Every key here is locked for users. Edit before deploying; see docs/ENTERPRISE.md.",
+  "privacy": {
+    "offline_only": true,
+    "telemetry": false,
+    "share_context": false,
+    "history_retention_days": 7
+  },
+  "stt": { "engines": ["faster_whisper", "whisper_cpp", "windows_speech"] },
+  "llm": { "chain": ["offline"] },
+  "activation": { "always_listening_allowed": false }
+}
