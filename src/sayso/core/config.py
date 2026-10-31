@@ -123,7 +123,7 @@ class ProviderSettings:
 def _default_providers() -> dict[str, ProviderSettings]:
     return {
         "anthropic": ProviderSettings(
-            kind="anthropic", model="claude-opus-5-5", api_key_ref="llm.anthropic", effort="low"
+            kind="anthropic", model="claude-haiku-5-5", api_key_ref="llm.anthropic", effort="low"
         ),
         "openai": ProviderSettings(
             kind="openai", base_url="https://api.openai.com/v1", model="gpt-4o-mini", api_key_ref="llm.openai"
