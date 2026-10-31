@@ -53,7 +53,7 @@ flowchart LR
 ## 2. Components and dependencies
 
 Arrows mean "imports". `core`, `stt` and `llm` never import Qt or Windows APIs, so they are unit-tested on any
-OS. `winsys` is the only package that calls Win32. `ui` is the only package that imports Qt.
+OS. `winsys` is the only package that calls Win32. `ui` is the only package that imports Qt, with one declared exception: `winsys/hotkeys.py` is a `QObject` so it can emit signals from its hook thread (`tests/test_layering.py` encodes this). `runtime_probes.py` and `app.py` sit above the layers and wire real Windows probes into `core.capabilities`.
 
 ```mermaid
 flowchart TB

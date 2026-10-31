@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Import signing certificate
+        id: cert
+        shell: pwsh
+        env:
+          SIGNING_CERT: ${{ secrets.SIGNING_CERT }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          if (-not $env:SIGNING_CERT) { "thumbprint=" >> $env:GITHUB_OUTPUT; exit 0 }
+          $bytes = [Convert]::FromBase64String($env:SIGNING_CERT)
+          $path = Join-Path $env:RUNNER_TEMP "sign.pfx"
+          [IO.File]::WriteAllBytes($path, $bytes)
+          $pw = ConvertTo-SecureString $env:SIGNING_CERT_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $path -CertStoreLocation Cert:\CurrentUser\My -Password $pw
+          "thumbprint=$($cert.Thumbprint)" >> $env:GITHUB_OUTPUT
+      - name: Build everything
+        shell: pwsh
+        run: |
+          $thumb = "${{ steps.cert.outputs.thumbprint }}"
+          if ($thumb) { ./packaging/build.ps1 -Target all -Sign -CertThumbprint $thumb -Python "py -3.12" }
+          else { ./packaging/build.ps1 -Target all -Python "py -3.12" }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.exe
+            dist/*.pyz
+            dist/run_from_source.cmd
+            dist/requirements-zipapp.txt
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
