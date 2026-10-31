@@ -61,7 +61,9 @@ class FakeAudio:
     def stop(self):
         return self.clip
 
-    def cancel(self): ...
+    def cancel(self):
+        self.cancelled = getattr(self, "cancelled", 0) + 1
+
     def close(self):
         self.closed += 1
 
@@ -277,3 +279,61 @@ def test_describe_error_messages():
     assert "speech engine" in describe_error(NoEngineAvailable([("a", "b")]))
     assert "wrong" in describe_error(RuntimeError("secret dictated text"))
     assert "secret" not in describe_error(RuntimeError("secret dictated text"))
+
+
+def test_outcome_of_cancelled_job_does_not_release_a_newer_job(qtbot, make):
+    import threading
+
+    from sayso.ui.controller import JobOutcome
+
+    c, hk, *_ = make()
+    old, new = threading.Event(), threading.Event()
+    c._inflight = [new]  # cancel() cleared the old job's token, then a new dictation was submitted
+    c._on_outcome(JobOutcome(cancelled=True, token=old))
+    assert c._inflight == [new] and c.busy
+
+
+def test_start_ignored_while_busy_resets_the_hotkey_machine(qtbot, make):
+    import threading
+
+    c, hk, audio, *_ = make()
+    c._inflight = [threading.Event()]
+    hk.started.emit("toggle", False)
+    assert not c._recording and audio.started == 0 and hk.idle == 1
+
+
+def test_history_updates_when_overlay_is_off(qtbot, make):
+    s = Settings()
+    s.general.show_overlay = False
+    c, hk, *_ = make(settings=s)
+    hk.started.emit("ptt", False)
+    with qtbot.waitSignal(c.dictated, timeout=5000):
+        hk.stopped.emit()
+
+
+def test_always_listening_survives_settings_reload(qtbot, make):
+    c, hk, audio, *_ = make()
+    fresh = []
+
+    def new_audio():
+        a = FakeAudio(make_clip())
+        fresh.append(a)
+        return a
+
+    c._audio_override = None
+    c._new_audio = new_audio
+    c.set_always_listening(True)
+    c.reload_settings()
+    assert c._always_on and fresh and c.audio is fresh[-1]
+    assert c.audio.on_frame == c._on_frame and c.audio.started == 1
+
+
+def test_turning_off_always_listening_keeps_a_push_to_talk_recording(qtbot, make):
+    c, hk, audio, inj, _ = make()
+    c.set_always_listening(True)
+    hk.started.emit("ptt", False)
+    c.set_always_listening(False)
+    assert c._recording and not getattr(audio, "cancelled", 0)
+    with qtbot.waitSignal(c.dictated, timeout=5000):
+        hk.stopped.emit()
+    assert inj.inserted

@@ -208,3 +208,31 @@ def test_force_idle_after_external_stop():
     k.down(L_CTRL), k.down(L_ALT), k.down(SPACE)
     k.m.force_idle()
     assert not k.m.recording
+
+
+# ---- lost key-ups (secure desktop)
+
+
+def test_stale_modifiers_after_secure_desktop_do_not_start_ptt():
+    # Ctrl+Alt+Del: the hook sees Ctrl and Alt go down, but the key-ups happen on the secure desktop.
+    k = Keys(machine())
+    k.down(L_CTRL), k.down(L_ALT)
+    physically_down: set[int] = set()  # back on the desktop, nothing is held
+    assert k.m.resync(physically_down.__contains__, except_vk=SPACE).actions == []
+    d = k.down(SPACE)
+    assert d.actions == [] and not d.swallow and not k.m.recording
+
+
+def test_resync_keeps_held_and_swallowed_keys():
+    k = Keys(machine())
+    k.down(L_CTRL), k.down(L_ALT), k.down(SPACE)
+    # Space was swallowed, so Windows reports it up even while it is held; Ctrl and Alt really are held.
+    assert k.m.resync({L_CTRL, L_ALT}.__contains__).actions == []
+    assert k.m.recording and k.up(SPACE).actions == [Action.STOP]
+
+
+def test_resync_stops_ptt_when_a_chord_key_was_released_unseen():
+    k = Keys(machine())
+    k.down(L_CTRL), k.down(L_ALT), k.down(SPACE)
+    assert k.m.resync({L_ALT}.__contains__).actions == [Action.STOP]
+    assert not k.m.recording

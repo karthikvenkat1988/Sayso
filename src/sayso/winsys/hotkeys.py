@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 TICK_MS = 50
 HEALTH_EVERY_TICKS = 100  # 5 s
 TIMER_ID = 0x5A01
+REINSTALL_MIN_MS = 60_000
 
 
 def _parse(spec: str, what: str) -> Chord | None:
@@ -56,6 +57,7 @@ class HotkeyService(QObject):
         self._hook = None
         self._proc = None  # keeps the HOOKPROC alive
         self._last_cb = 0
+        self._last_reinstall = 0
         self._ticks = 0
         self._fallback_recording = False
         self._sm = self._build_machine()
@@ -162,6 +164,8 @@ class HotkeyService(QObject):
             self._last_cb = win32.kernel32().GetTickCount()
             down = w_param in (win32.WM_KEYDOWN, win32.WM_SYSKEYDOWN)
             injected = bool(kb.flags & win32.LLKHF_INJECTED) and kb.dwExtraInfo == win32.SAYSO_TAG
+            if down and not injected:
+                self._dispatch(self._sm.resync(win32.is_key_down, except_vk=int(kb.vkCode)).actions)
             decision = self._sm.on_key(int(kb.vkCode), down, int(kb.time), injected)
             self._dispatch(decision.actions)
             swallow = decision.swallow
@@ -175,15 +179,17 @@ class HotkeyService(QObject):
         command = Action.COMMAND_ON in actions
         for a in actions:
             if a is Action.START_PTT:
+                self._mask_menu_key()
                 self.started.emit("ptt", command)
             elif a is Action.START_TOGGLE:
+                self._mask_menu_key()
                 self.started.emit("toggle", command)
             elif a is Action.COMMAND_ON and not (
                 Action.START_PTT in actions or Action.START_TOGGLE in actions
             ):
                 self.command_engaged.emit()
             elif a is Action.STOP:
-                self._release_alt_safely()
+                self._mask_menu_key()
                 self.stopped.emit()
             elif a is Action.CANCEL:
                 self.cancelled.emit()
@@ -192,9 +198,11 @@ class HotkeyService(QObject):
             elif a is Action.REINJECT_CAPSLOCK:
                 win32.send_key_events([(win32.VK_CAPITAL, False), (win32.VK_CAPITAL, True)])
 
-    def _release_alt_safely(self) -> None:
-        # A bare Alt press/release opens the app's menu bar. A tagged dummy key in between cancels that.
-        if win32.is_key_down(VK_MENU):
+    def _mask_menu_key(self) -> None:
+        # Alt or Win pressed and released with only swallowed keys in between opens the menu bar or the Start
+        # menu. A tagged dummy key while they are held cancels that. It has to be sent while the key is still
+        # down, so it is sent at start (the trigger key was just swallowed) as well as at stop.
+        if any(win32.is_key_down(vk) for vk in (VK_MENU, win32.VK_LWIN, win32.VK_RWIN)):
             win32.send_key_events([(win32.VK_DUMMY, False), (win32.VK_DUMMY, True)])
 
     def _on_tick(self) -> None:
@@ -213,9 +221,14 @@ class HotkeyService(QObject):
         info.cbSize = ctypes.sizeof(info)
         if not win32.user32().GetLastInputInfo(ctypes.byref(info)):
             return
+        # GetLastInputInfo also counts mouse input, so a user who is only mousing looks like a dead hook.
+        # Reinstalling is harmless, but limit it to once a minute so mouse use does not churn the hook.
+        now = int(win32.kernel32().GetTickCount())
         gap = (int(info.dwTime) - self._last_cb) & 0xFFFFFFFF
-        if 3000 < gap < 0x7FFFFFFF and not self._sm._pressed:
-            log.warning("keyboard hook went silent; reinstalling")
+        since_reinstall = (now - self._last_reinstall) & 0xFFFFFFFF
+        if 3000 < gap < 0x7FFFFFFF and since_reinstall > REINSTALL_MIN_MS and not self._sm._pressed:
+            self._last_reinstall = now
+            log.info("keyboard hook may have gone silent; reinstalling")
             win32.user32().UnhookWindowsHookEx(self._hook)
             self._hook = None
             self._install_hook()

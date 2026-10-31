@@ -143,6 +143,7 @@ class Injector:
         clipboard_ok: Callable[[], bool] | None = None,
         uia_ok: Callable[[], bool] | None = None,
         remote: Callable[[], bool] | None = None,
+        wait_modifiers: Callable[[], None] | None = None,
     ):
         self.settings = settings
         self.methods = methods or {
@@ -155,6 +156,7 @@ class Injector:
         self._clipboard_ok = clipboard_ok or clipboard.available
         self._uia_ok = uia_ok or context.uia_available
         self._remote = remote or context.is_remote_session
+        self._wait_modifiers = wait_modifiers or _wait_for_modifiers_released
 
     def insert(self, text: str, ctx: FocusContext, *, replace_selection: bool = False) -> InsertReport:
         start = time.perf_counter()
@@ -190,8 +192,17 @@ class Injector:
 
     def copy_selection(self) -> str | None:
         """Copies the current selection with Ctrl+C and puts the old clipboard back."""
+        # Called right after the push-to-talk keys are released; with Shift or Alt still held, Ctrl+C would
+        # arrive as Ctrl+Shift+C or Ctrl+Alt+C, which many apps bind to something else.
+        try:
+            self._wait_modifiers()
+        except Exception:
+            log.debug("modifier wait failed", exc_info=True)
         try:
             snap = clipboard.ClipboardSnapshot.take()
+        except (clipboard.ClipboardBusy, OSError):
+            return None
+        try:
             clipboard.clear()
             before = clipboard.sequence_number()
             win32.send_key_events(
@@ -201,17 +212,26 @@ class Injector:
             while time.monotonic() < deadline and clipboard.sequence_number() == before:
                 time.sleep(0.01)
             text = clipboard.get_text() if clipboard.sequence_number() != before else None
-            snap.restore()
             return text or None
         except (clipboard.ClipboardBusy, OSError):
             return None
+        finally:
+            # Always put the user's clipboard back, even if the copy failed after it was cleared.
+            try:
+                snap.restore()
+            except (clipboard.ClipboardBusy, OSError):
+                log.info("clipboard restore after copy skipped (busy)")
 
 
-def _prepare_real(ctx: FocusContext) -> None:
+def _wait_for_modifiers_released() -> None:
     deadline = time.monotonic() + MODIFIER_WAIT_S
     mods = (win32.VK_CONTROL, win32.VK_SHIFT, win32.VK_MENU, win32.VK_LWIN, win32.VK_RWIN)
     while time.monotonic() < deadline and any(win32.is_key_down(v) for v in mods):
         time.sleep(0.01)
+
+
+def _prepare_real(ctx: FocusContext) -> None:
+    _wait_for_modifiers_released()
     if ctx.hwnd and context.foreground_hwnd() != ctx.hwnd:
         win32.user32().SetForegroundWindow(ctx.hwnd)
         time.sleep(0.03)

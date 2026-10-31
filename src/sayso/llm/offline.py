@@ -14,6 +14,8 @@ _RELAY = re.compile(
     r"(?P<who>(?:the\s+)?[a-z][\w'-]*)\s+(?:know\s+)?(?:that\s+)?(?P<msg>.+)$",
     re.IGNORECASE,
 )
+# "let me know", "remind us", "ask them" are requests, not messages addressed to someone.
+_NOT_ADDRESSEES = {"me", "us", "you", "him", "her", "them", "it", "myself"}
 _PRONOUNS = [(r"\bhe's\b|\bshe's\b|\bthey're\b", "you're"), (r"\bhim\b|\bher\b|\bthem\b", "you")]
 
 
@@ -43,6 +45,8 @@ class OfflineRewriter(LLMProvider):
             return textproc.ensure_terminal_punctuation(cleaned) if mode is Mode.REWRITE_TEXT else cleaned
 
         relay = _RELAY.match(cleaned.rstrip(".!?"))
+        if relay and relay.group("who").strip().lower() in _NOT_ADDRESSEES:
+            relay = None
         if relay and mode in (Mode.PROFESSIONAL, Mode.EMAIL, Mode.CHAT):
             who = relay.group("who").strip()
             who = "everyone" if who.lower() in {"the team", "everyone", "everybody", "team"} else who.title()

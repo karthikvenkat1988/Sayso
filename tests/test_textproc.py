@@ -60,6 +60,9 @@ def test_strip_model_wrapping():
     assert tp.strip_model_wrapping("Here is the rewritten text:\nHi there") == "Hi there"
     assert tp.strip_model_wrapping("“Hi”") == "Hi"
     assert tp.strip_model_wrapping("plain") == "plain"
+    # Quotes that open and close different phrases are part of the text.
+    assert tp.strip_model_wrapping('"Hi" she said "ok"') == '"Hi" she said "ok"'
+    assert tp.strip_model_wrapping("“Yes” and “no”") == "“Yes” and “no”"
 
 
 def test_word_count():

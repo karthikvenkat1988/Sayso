@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from sayso.core.modes import Mode
@@ -57,3 +59,19 @@ def test_provider_interface_streams_delta():
         "hello", Mode.REWRITE_TEXT, PromptContext(), share_context=False, on_delta=seen.append
     )
     assert r.provider == "offline" and seen == [r.text]
+
+
+@pytest.mark.parametrize(
+    "spoken",
+    [
+        "let me know if you are free tomorrow",
+        "remind me to call mom",
+        "please let us know by friday",
+        "ask them to join at three",
+        "so let it go",
+    ],
+)
+def test_requests_with_pronouns_are_not_greetings(spoken):
+    for mode in (Mode.CHAT, Mode.PROFESSIONAL, Mode.EMAIL):
+        out = OfflineRewriter.apply(spoken, mode)
+        assert not re.search(r"Hi (Me|Us|Them|It|You),", out), out

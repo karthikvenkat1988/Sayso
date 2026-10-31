@@ -4,6 +4,7 @@ No Win32 here; ``hotkeys.py`` feeds it low-level keyboard events."""
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
@@ -193,6 +194,24 @@ class HotkeyStateMachine:
     def tick(self, t_ms: int) -> Decision:
         d = Decision()
         self._expire_tap(t_ms, d)
+        return d
+
+    def resync(self, is_down: Callable[[int], bool], except_vk: int | None = None) -> Decision:
+        """Forgets keys whose key-up never arrived. Ctrl+Alt+Del, Win+L and UAC prompts switch to the secure
+        desktop, where the hook sees nothing; without this, a stale Ctrl+Alt would make a bare Space start
+        push-to-talk (and be swallowed). Swallowed keys are left alone because Windows does not update the
+        physical state of keys a hook blocked."""
+        d = Decision()
+        stale = {
+            vk for vk in self._pressed if vk != except_vk and vk not in self._swallowed and not is_down(vk)
+        }
+        if not stale:
+            return d
+        self._pressed -= stale
+        if self._mode == "ptt" and self.ptt and any(self.ptt.contains(vk) for vk in stale):
+            self._mode = None
+            self._command = False
+            d.actions.append(Action.STOP)
         return d
 
     def on_key(self, vk: int, down: bool, t_ms: int, injected: bool = False) -> Decision:

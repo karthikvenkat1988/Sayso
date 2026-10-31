@@ -1,17 +1,19 @@
 import logging
 import sys
 import types
+from pathlib import Path
 
 import httpx
 import pytest
 import respx
 
-from sayso.core.config import CloudSttSettings, FasterWhisperSettings, WindowsSpeechSettings
+from sayso.core.config import CloudSttSettings, FasterWhisperSettings, SttSettings, WindowsSpeechSettings
 from sayso.core.logging_setup import setup_logging
 from sayso.core.telemetry import LatencySample, LocalMetrics
 from sayso.stt.base import EngineUnavailable
 from sayso.stt.cloud_engine import CloudWhisperEngine
 from sayso.stt.faster_whisper_engine import FasterWhisperEngine
+from sayso.stt.registry import create_engine
 from sayso.stt.windows_speech_engine import WindowsSpeechEngine
 
 from .conftest import make_clip
@@ -92,6 +94,27 @@ def test_faster_whisper_with_fake_model(monkeypatch, tmp_path):
     assert Model.source.endswith("faster-whisper-base.en") and Model.kw["local_files_only"] is True
 
 
+def test_faster_whisper_finds_model_bundled_next_to_exe(monkeypatch, tmp_path):
+    # Offline zips put models in <app>/models while portable data lives in <app>/data/models.
+    class Model:
+        def __init__(self, source, **kw):
+            Model.source = source
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", types.SimpleNamespace(WhisperModel=Model))
+    app = tmp_path / "app"
+    (app / "models" / "faster-whisper-base.en").mkdir(parents=True)
+    eng = create_engine(
+        "faster_whisper",
+        SttSettings(),
+        models_dir=app / "data" / "models",
+        app_dir=app,
+        secrets=lambda r: None,
+        offline_only=True,
+    )
+    eng.load()
+    assert Path(Model.source) == app / "models" / "faster-whisper-base.en"
+
+
 def test_faster_whisper_load_failure(monkeypatch, tmp_path):
     def boom(*a, **k):
         raise OSError("no files")
@@ -107,3 +130,22 @@ def test_windows_speech_unavailable_off_windows():
     with pytest.raises(EngineUnavailable):
         eng.load()
     eng.close()
+
+
+def test_windows_speech_hung_helper_times_out_instead_of_blocking():
+    import queue
+
+    from sayso.stt import windows_speech_engine as ws
+
+    eng = WindowsSpeechEngine(WindowsSpeechSettings())
+    eng._lines = queue.Queue()
+    with pytest.raises(EngineUnavailable, match="stopped responding"):
+        eng._read(0.05)
+    eng._lines.put('{"text": "hi"}\n')
+    assert eng._read(1) == '{"text": "hi"}\n'
+    eng._lines.put(None)
+    with pytest.raises(EngineUnavailable, match="exited"):
+        eng._read(1)
+    lines: queue.Queue = queue.Queue()
+    ws._pump(__import__("io").StringIO("a\nb\n"), lines)
+    assert [lines.get(), lines.get(), lines.get()] == ["a\n", "b\n", None]
